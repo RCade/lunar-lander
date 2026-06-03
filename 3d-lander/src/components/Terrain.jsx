@@ -59,7 +59,7 @@ export const LANDING_PADS = [
   { x: -120, z: 100, y: 12, radius: 8, multiplier: 4, color: '#ff007f', label: 'HARD' },
 ];
 
-export function Terrain() {
+export function Terrain({ glowActive }) {
   const noiseGen = useMemo(() => new SimpleNoise(0.85), []);
 
   const [terrainGeometry, padsGrid] = useMemo(() => {
@@ -142,7 +142,12 @@ export function Terrain() {
     <group>
       {/* Wireframe Terrain Lines */}
       <lineSegments geometry={terrainGeometry}>
-        <lineBasicMaterial color="#00a8cc" opacity={0.6} transparent={true} />
+        <lineBasicMaterial 
+          color={glowActive ? new THREE.Color("#00a8cc").multiplyScalar(1.8) : "#00a8cc"} 
+          toneMapped={false}
+          opacity={glowActive ? 0.95 : 0.6} 
+          transparent={true} 
+        />
       </lineSegments>
 
       {/* Render Landing Pads */}
@@ -151,26 +156,40 @@ export function Terrain() {
           {/* Inner landing circle */}
           <mesh rotation={[-Math.PI / 2, 0, 0]}>
             <ringGeometry args={[pad.radius - 1, pad.radius, 32]} />
-            <meshBasicMaterial color={pad.color} side={THREE.DoubleSide} />
+            <meshBasicMaterial 
+              color={glowActive ? new THREE.Color(pad.color).multiplyScalar(2.0) : pad.color} 
+              toneMapped={false}
+              side={THREE.DoubleSide} 
+            />
           </mesh>
 
           {/* Dynamic grid marker in circle center */}
           <mesh rotation={[-Math.PI / 2, 0, 0]}>
             <ringGeometry args={[0, 0.5, 4]} />
-            <meshBasicMaterial color={pad.color} side={THREE.DoubleSide} />
+            <meshBasicMaterial 
+              color={glowActive ? new THREE.Color(pad.color).multiplyScalar(2.0) : pad.color} 
+              toneMapped={false}
+              side={THREE.DoubleSide} 
+            />
           </mesh>
 
           {/* Pad border lines for CRT grid feel */}
           <mesh rotation={[-Math.PI / 2, 0, 0]}>
             <circleGeometry args={[pad.radius, 8]} />
-            <meshBasicMaterial color={pad.color} wireframe={true} opacity={0.3} transparent={true} />
+            <meshBasicMaterial 
+              color={glowActive ? new THREE.Color(pad.color).multiplyScalar(1.5) : pad.color} 
+              toneMapped={false}
+              wireframe={true} 
+              opacity={glowActive ? 0.65 : 0.3} 
+              transparent={true} 
+            />
           </mesh>
 
           {/* Holographic Text Multiplier */}
           <Text
             position={[0, 4, 0]}
             fontSize={2.5}
-            color={pad.color}
+            color={glowActive ? new THREE.Color(pad.color).multiplyScalar(2.0) : pad.color}
             font="/orbitron.ttf"
             anchorX="center"
             anchorY="middle"
@@ -180,11 +199,11 @@ export function Terrain() {
           <Text
             position={[0, 1.5, 0]}
             fontSize={1.2}
-            color={pad.color}
+            color={glowActive ? new THREE.Color(pad.color).multiplyScalar(1.5) : pad.color}
             font="/sharetechmono.ttf"
             anchorX="center"
             anchorY="middle"
-            opacity={0.7}
+            opacity={glowActive ? 0.95 : 0.7}
           >
             {pad.label}
           </Text>

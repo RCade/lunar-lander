@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
-export function Cockpit({ telemetryRef }) {
+export function Cockpit({ telemetryRef, glowActive }) {
   const cockpitRef = useRef();
   const artificialHorizonRef = useRef();
   const driftIndicatorRef = useRef();
@@ -60,7 +60,12 @@ export function Cockpit({ telemetryRef }) {
       {/* Curved canopy rings */}
       <mesh position={[0, 0.5, -2]}>
         <torusGeometry args={[2.0, 0.03, 8, 24, Math.PI]} />
-        <meshBasicMaterial color="#ff5d00" opacity={0.4} transparent={true} />
+        <meshBasicMaterial 
+          color={glowActive ? new THREE.Color("#ff5d00").multiplyScalar(1.5) : "#ff5d00"} 
+          toneMapped={false}
+          opacity={glowActive ? 0.65 : 0.4} 
+          transparent={true} 
+        />
       </mesh>
 
       {/* Vertical columns and horizontal cockpit struts */}
@@ -80,13 +85,23 @@ export function Cockpit({ telemetryRef }) {
             ]), 3]}
           />
         </bufferGeometry>
-        <lineBasicMaterial color="#00f0ff" opacity={0.35} transparent={true} />
+        <lineBasicMaterial 
+          color={glowActive ? new THREE.Color("#00f0ff").multiplyScalar(1.8) : "#00f0ff"} 
+          toneMapped={false}
+          opacity={glowActive ? 0.65 : 0.35} 
+          transparent={true} 
+        />
       </line>
 
       {/* Floor window outline (looking down at terrain) */}
       <mesh position={[0, -2.0, -2.5]} rotation={[-Math.PI / 2.2, 0, 0]}>
         <ringGeometry args={[1.2, 1.3, 8]} />
-        <meshBasicMaterial color="#00f0ff" opacity={0.6} transparent={true} />
+        <meshBasicMaterial 
+          color={glowActive ? new THREE.Color("#00f0ff").multiplyScalar(1.8) : "#00f0ff"} 
+          toneMapped={false}
+          opacity={glowActive ? 0.9 : 0.6} 
+          transparent={true} 
+        />
       </mesh>
 
       {/* --- Dynamic Holographic HUD Elements (Projected in front of camera) --- */}
@@ -106,14 +121,24 @@ export function Cockpit({ telemetryRef }) {
               ]), 3]}
             />
           </bufferGeometry>
-          <lineBasicMaterial color="#ffb700" opacity={0.7} transparent={true} />
+          <lineBasicMaterial 
+            color={glowActive ? new THREE.Color("#ffb700").multiplyScalar(1.8) : "#ffb700"} 
+            toneMapped={false}
+            opacity={glowActive ? 0.95 : 0.7} 
+            transparent={true} 
+          />
         </line>
 
         {/* Artificial Horizon Ring (Rotates) */}
         <group ref={artificialHorizonRef}>
           <mesh rotation={[0, 0, 0]}>
             <ringGeometry args={[1.8, 1.83, 32]} />
-            <meshBasicMaterial color="#ffb700" opacity={0.4} transparent={true} />
+            <meshBasicMaterial 
+              color={glowActive ? new THREE.Color("#ffb700").multiplyScalar(1.5) : "#ffb700"} 
+              toneMapped={false}
+              opacity={glowActive ? 0.65 : 0.4} 
+              transparent={true} 
+            />
           </mesh>
           {/* Horizon marks */}
           <line>
@@ -127,7 +152,12 @@ export function Cockpit({ telemetryRef }) {
                 ]), 3]}
               />
             </bufferGeometry>
-            <lineBasicMaterial color="#ffb700" opacity={0.5} transparent={true} />
+            <lineBasicMaterial 
+              color={glowActive ? new THREE.Color("#ffb700").multiplyScalar(1.8) : "#ffb700"} 
+              toneMapped={false}
+              opacity={glowActive ? 0.8 : 0.5} 
+              transparent={true} 
+            />
           </line>
         </group>
       </group>
@@ -137,13 +167,20 @@ export function Cockpit({ telemetryRef }) {
         {/* Small glowing diamond showing vector velocity direction */}
         <mesh rotation={[0, 0, Math.PI / 4]}>
           <ringGeometry args={[0.08, 0.12, 4]} />
-          <meshBasicMaterial color="#ff007f" side={THREE.DoubleSide} />
+          <meshBasicMaterial 
+            color={glowActive ? new THREE.Color("#ff007f").multiplyScalar(2.2) : "#ff007f"} 
+            toneMapped={false}
+            side={THREE.DoubleSide} 
+          />
         </mesh>
         
         {/* Center reticle target dot */}
         <mesh>
           <circleGeometry args={[0.03, 8]} />
-          <meshBasicMaterial color="#ff007f" />
+          <meshBasicMaterial 
+            color={glowActive ? new THREE.Color("#ff007f").multiplyScalar(2.2) : "#ff007f"} 
+            toneMapped={false}
+          />
         </mesh>
       </group>
 
@@ -151,11 +188,21 @@ export function Cockpit({ telemetryRef }) {
       <group position={[0, -1.5, -5.0]}>
         <mesh>
           <ringGeometry args={[0.45, 0.48, 16]} />
-          <meshBasicMaterial color="#00f0ff" opacity={0.25} transparent={true} />
+          <meshBasicMaterial 
+            color={glowActive ? new THREE.Color("#00f0ff").multiplyScalar(1.5) : "#00f0ff"} 
+            toneMapped={false}
+            opacity={glowActive ? 0.45 : 0.25} 
+            transparent={true} 
+          />
         </mesh>
         <mesh>
           <ringGeometry args={[1.0, 1.03, 16]} />
-          <meshBasicMaterial color="#00f0ff" opacity={0.12} transparent={true} />
+          <meshBasicMaterial 
+            color={glowActive ? new THREE.Color("#00f0ff").multiplyScalar(1.5) : "#00f0ff"} 
+            toneMapped={false}
+            opacity={glowActive ? 0.25 : 0.12} 
+            transparent={true} 
+          />
         </mesh>
       </group>
     </group>

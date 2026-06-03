@@ -7,6 +7,7 @@ import { Lander } from './components/Lander';
 import { Terrain, LANDING_PADS } from './components/Terrain';
 import { Starfield } from './components/Starfield';
 import { Cockpit } from './components/Cockpit';
+import { EffectComposer, Bloom } from '@react-three/postprocessing';
 
 // --- Throttled UI Telemetry Updater ---
 // Read values from ref to keep canvas rendering at full framerate (no react re-render overhead)
@@ -101,6 +102,8 @@ function CameraController({ cameraMode, telemetryRef }) {
 
 export default function App() {
   const [gameState, setGameState] = useState('menu'); // menu, playing, landed, crashed
+  const [glowActive, setGlowActive] = useState(false);
+  const [antialiasActive, setAntialiasActive] = useState(false);
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(2500);
   const [isMuted, setIsMuted] = useState(false);
@@ -108,6 +111,24 @@ export default function App() {
     { text: 'Flight deck systems offline', time: '0.0s' },
     { text: 'Waiting for boot command...', time: '0.0s' }
   ]);
+
+  // Synchronize React score and highScore state with index.html header elements
+  useEffect(() => {
+    const scoreEl = document.getElementById('score-val');
+    if (scoreEl) {
+      scoreEl.textContent = String(score).padStart(5, '0');
+    }
+  }, [score]);
+
+  useEffect(() => {
+    const highScoreEl = document.getElementById('hiscore-val');
+    if (highScoreEl) {
+      highScoreEl.textContent = String(highScore).padStart(5, '0');
+    }
+    if (score > highScore) {
+      setHighScore(score);
+    }
+  }, [score, highScore]);
 
   // Unified input capture hook
   const { inputs, updateInputs } = useInput();
@@ -163,6 +184,28 @@ export default function App() {
     return () => cancelAnimationFrame(animId);
   }, [updateInputs]);
 
+  // Listen for render deck toggle shortcut keys
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.code === 'KeyG') {
+        setGlowActive(prev => {
+          const next = !prev;
+          addLog(`Vector Glow ${next ? 'ONLINE' : 'OFFLINE'}`);
+          return next;
+        });
+      }
+      if (e.code === 'KeyA') {
+        setAntialiasActive(prev => {
+          const next = !prev;
+          addLog(`Anti-Aliasing ${next ? 'SMOOTH' : 'JAGGED'}`);
+          return next;
+        });
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   // Handle game state transitions
   const startGame = () => {
     startTime.current = Date.now();
@@ -195,10 +238,10 @@ export default function App() {
   }, [gameState]);
 
   return (
-    <div className="game-container" style={{ display: 'flex', width: '100%', maxWidth: '1300px', gap: '20px' }}>
+    <div className="game-container">
       
       {/* --- Left Telemetry Sidebar Panel --- */}
-      <div className="sidebar" style={{ flex: '0 0 310px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+      <div className="sidebar">
         <h2>TELEMETRY DECK</h2>
         
         {/* Fuel Meter block */}
@@ -245,7 +288,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* Flight control indicators */}
+        {/* Flight Assist controls */}
         <div className="info-block">
           <h3>Flight Assist</h3>
           <div className="key-row">
@@ -257,6 +300,39 @@ export default function App() {
           <div className="key-row" style={{ marginTop: '6px' }}>
             <span>Active Camera</span>
             <span className="kbd-key">{uiTelemetry.cameraMode === 3 ? 'CHASE' : 'COCKPIT'} [C]</span>
+          </div>
+        </div>
+
+        {/* Rendering options controls */}
+        <div className="info-block">
+          <h3>Rendering Deck</h3>
+          <div 
+            className="key-row" 
+            style={{ cursor: 'pointer' }}
+            onClick={() => setGlowActive(p => {
+              const next = !p;
+              addLog(`Vector Glow ${next ? 'ONLINE' : 'OFFLINE'}`);
+              return next;
+            })}
+          >
+            <span>Vector Glow</span>
+            <span className={glowActive ? 'color-green' : 'color-red'} style={{ fontWeight: 'bold' }}>
+              {glowActive ? 'ONLINE' : 'OFFLINE'} [G]
+            </span>
+          </div>
+          <div 
+            className="key-row" 
+            style={{ cursor: 'pointer', marginTop: '6px' }}
+            onClick={() => setAntialiasActive(p => {
+              const next = !p;
+              addLog(`Anti-Aliasing ${next ? 'SMOOTH' : 'JAGGED'}`);
+              return next;
+            })}
+          >
+            <span>Anti-Aliasing</span>
+            <span className={antialiasActive ? 'color-green' : 'color-red'} style={{ fontWeight: 'bold' }}>
+              {antialiasActive ? 'SMOOTH' : 'JAGGED'} [A]
+            </span>
           </div>
         </div>
 
@@ -284,12 +360,12 @@ export default function App() {
       </div>
 
       {/* --- Central Cabinet monitor containing WebGL R3F Canvas --- */}
-      <div className="monitor-cabinet" style={{ flex: 1, position: 'relative' }}>
+      <div className="monitor-cabinet">
         <div className="screen-wrapper">
           
           {/* React Three Fiber Canvas */}
           <Canvas
-            gl={{ antialias: false }} // Keep it aliased for that sharp vector CRT look
+            gl={{ antialias: false, toneMapping: THREE.NoToneMapping }}
             onCreated={({ gl }) => {
               gl.setClearColor('#020204');
             }}
@@ -299,7 +375,7 @@ export default function App() {
               <ambientLight intensity={0.15} />
 
               {/* Procedural 3D Terrain */}
-              <Terrain />
+              <Terrain glowActive={glowActive} />
 
               {/* 3D Lander */}
               <Lander
@@ -307,6 +383,7 @@ export default function App() {
                 setGameState={setGameState}
                 inputRef={inputs}
                 telemetryRef={telemetryRef}
+                glowActive={glowActive}
               />
 
               {/* Space particle field */}
@@ -314,7 +391,7 @@ export default function App() {
 
               {/* First-person cockpit wireframe HUD */}
               {uiTelemetry.cameraMode === 1 && gameState === 'playing' && (
-                <Cockpit telemetryRef={telemetryRef} />
+                <Cockpit telemetryRef={telemetryRef} glowActive={glowActive} />
               )}
 
               {/* Spring camera updates */}
@@ -322,6 +399,27 @@ export default function App() {
 
               {/* Keep physics frame listener mapping to UI */}
               <TelemetryListener telemetryRef={telemetryRef} setUiTelemetry={setUiTelemetry} />
+
+              {/* Glowing Vector Graphics Postprocessing */}
+              {(glowActive || antialiasActive) ? (
+                <EffectComposer multisampling={antialiasActive ? 8 : 0}>
+                  {glowActive ? (
+                    <Bloom 
+                      intensity={2.2} 
+                      luminanceThreshold={0.0} 
+                      luminanceSmoothing={0.8}
+                      height={300}
+                    />
+                  ) : (
+                    <Bloom 
+                      intensity={0.0}
+                      luminanceThreshold={0.0}
+                      luminanceSmoothing={0.0}
+                      height={300}
+                    />
+                  )}
+                </EffectComposer>
+              ) : null}
             </Suspense>
           </Canvas>
 

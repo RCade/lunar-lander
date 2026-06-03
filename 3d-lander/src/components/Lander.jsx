@@ -18,7 +18,7 @@ const I_XX = 1200;           // kg*m^2
 const I_YY = 900;
 const I_ZZ = 1200;
 
-export function Lander({ gameState, setGameState, inputRef, telemetryRef, cameraRef }) {
+export function Lander({ gameState, setGameState, inputRef, telemetryRef, cameraRef, glowActive }) {
   const landerRef = useRef();
   const visualGroupRef = useRef();
 
@@ -273,13 +273,21 @@ export function Lander({ gameState, setGameState, inputRef, telemetryRef, camera
         {/* Lander Core Chassis (Octagonal cylinder shape) */}
         <mesh position={[0, 0, 0]}>
           <cylinderGeometry args={[2.5, 3.5, 2.0, 8]} />
-          <meshBasicMaterial color="#ffffff" wireframe={true} />
+          <meshBasicMaterial 
+            color={glowActive ? new THREE.Color("#ffffff").multiplyScalar(1.8) : "#ffffff"} 
+            toneMapped={false}
+            wireframe={true} 
+          />
         </mesh>
   
         {/* Lander Cockpit Sphere Dome */}
         <mesh position={[0, 1.2, 0]}>
           <sphereGeometry args={[2.2, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2]} />
-          <meshBasicMaterial color="#00ffb7" wireframe={true} />
+          <meshBasicMaterial 
+            color={glowActive ? new THREE.Color("#00ffb7").multiplyScalar(2.0) : "#00ffb7"} 
+            toneMapped={false}
+            wireframe={true} 
+          />
         </mesh>
   
         {/* Landing Legs / Struts */}
@@ -298,13 +306,20 @@ export function Lander({ gameState, setGameState, inputRef, telemetryRef, camera
                     args={[new Float32Array([0, 0.5, 0, 1.5, -0.6, 0]), 3]}
                   />
                 </bufferGeometry>
-                <lineBasicMaterial color="#ffffff" />
+                <lineBasicMaterial 
+                  color={glowActive ? new THREE.Color("#ffffff").multiplyScalar(1.8) : "#ffffff"} 
+                  toneMapped={false}
+                />
               </line>
               
               {/* Footpad */}
               <mesh position={[1.5, -0.6, 0]} rotation={[0, 0, 0]}>
                 <cylinderGeometry args={[0.6, 0.6, 0.15, 6]} />
-                <meshBasicMaterial color="#ffffff" wireframe={true} />
+                <meshBasicMaterial 
+                  color={glowActive ? new THREE.Color("#ffffff").multiplyScalar(1.8) : "#ffffff"} 
+                  toneMapped={false}
+                  wireframe={true} 
+                />
               </mesh>
             </group>
           );
@@ -313,14 +328,22 @@ export function Lander({ gameState, setGameState, inputRef, telemetryRef, camera
         {/* Main Engine Nozzle */}
         <mesh position={[0, -1.2, 0]}>
           <cylinderGeometry args={[0.3, 0.8, 0.6, 6]} />
-          <meshBasicMaterial color="#ffffff" wireframe={true} />
+          <meshBasicMaterial 
+            color={glowActive ? new THREE.Color("#ffffff").multiplyScalar(1.5) : "#ffffff"} 
+            toneMapped={false}
+            wireframe={true} 
+          />
         </mesh>
   
         {/* Main engine thruster fire (vector lines) */}
         {gameState === 'playing' && inputRef.current.throttle > 0.05 && (
           <mesh position={[0, -2.0, 0]} scale={[1, inputRef.current.throttle * 2.5, 1]}>
             <coneGeometry args={[0.6, 1.2, 6, 1, true]} />
-            <meshBasicMaterial color="#ff5100" wireframe={true} />
+            <meshBasicMaterial 
+              color={glowActive ? new THREE.Color("#ff5100").multiplyScalar(3.0) : "#ff5100"} 
+              toneMapped={false}
+              wireframe={true} 
+            />
           </mesh>
         )}
   
@@ -338,7 +361,10 @@ export function Lander({ gameState, setGameState, inputRef, telemetryRef, camera
                   ]), 3]}
                 />
               </bufferGeometry>
-              <lineBasicMaterial color="#00f0ff" />
+              <lineBasicMaterial 
+                color={glowActive ? new THREE.Color("#00f0ff").multiplyScalar(2.2) : "#00f0ff"} 
+                toneMapped={false}
+              />
             </line>
           </group>
         )}
@@ -356,7 +382,10 @@ export function Lander({ gameState, setGameState, inputRef, telemetryRef, camera
                   ]), 3]}
                 />
               </bufferGeometry>
-              <lineBasicMaterial color="#00ff88" />
+              <lineBasicMaterial 
+                color={glowActive ? new THREE.Color("#00ff88").multiplyScalar(2.2) : "#00ff88"} 
+                toneMapped={false}
+              />
             </line>
           </group>
         )}
