@@ -176,10 +176,34 @@ export default function App() {
   useEffect(() => {
     let animId;
     let lastT = performance.now();
+    let frames = 0;
+    let lastFpsUpdate = lastT;
+
     const loop = (now) => {
+      frames++;
       const dt = (now - lastT) / 1000;
       lastT = now;
       updateInputs(dt);
+
+      // Update FPS counter every 500ms
+      if (now - lastFpsUpdate > 500) {
+        const fps = Math.round((frames * 1000) / (now - lastFpsUpdate));
+        const fpsEl = document.getElementById('fps-val');
+        if (fpsEl) {
+          fpsEl.textContent = String(fps);
+          // Color code according to performance threshold
+          if (fps >= 55) {
+            fpsEl.className = 'color-green';
+          } else if (fps >= 30) {
+            fpsEl.className = 'color-amber';
+          } else {
+            fpsEl.className = 'color-red';
+          }
+        }
+        frames = 0;
+        lastFpsUpdate = now;
+      }
+
       animId = requestAnimationFrame(loop);
     };
     animId = requestAnimationFrame(loop);
@@ -388,7 +412,8 @@ export default function App() {
           
           {/* React Three Fiber Canvas */}
           <Canvas
-            gl={{ antialias: false, toneMapping: THREE.NoToneMapping }}
+            dpr={typeof window !== 'undefined' ? Math.min(window.devicePixelRatio, 3) : 1}
+            gl={{ antialias: true, toneMapping: THREE.NoToneMapping }}
             onCreated={({ gl }) => {
               gl.setClearColor('#020204');
             }}
@@ -429,25 +454,16 @@ export default function App() {
               )}
 
               {/* Glowing Vector Graphics Postprocessing */}
-              {(!splitViewActive && (glowActive || antialiasActive)) ? (
+              {!splitViewActive && (
                 <EffectComposer multisampling={antialiasActive ? 8 : 0}>
-                  {glowActive ? (
-                    <Bloom 
-                      intensity={2.2} 
-                      luminanceThreshold={0.0} 
-                      luminanceSmoothing={0.8}
-                      height={300}
-                    />
-                  ) : (
-                    <Bloom 
-                      intensity={0.0}
-                      luminanceThreshold={0.0}
-                      luminanceSmoothing={0.0}
-                      height={300}
-                    />
-                  )}
+                  <Bloom 
+                    intensity={glowActive ? 2.2 : 0.0} 
+                    luminanceThreshold={0.0} 
+                    luminanceSmoothing={glowActive ? 0.8 : 0.0}
+                    height={300}
+                  />
                 </EffectComposer>
-              ) : null}
+              )}
             </Suspense>
           </Canvas>
 

@@ -62,7 +62,7 @@ export const LANDING_PADS = [
 export function Terrain({ glowActive }) {
   const noiseGen = useMemo(() => new SimpleNoise(0.85), []);
 
-  const [terrainGeometry, padsGrid] = useMemo(() => {
+  const [terrainGeometry, solidGeometry, padsGrid] = useMemo(() => {
     const geom = new THREE.PlaneGeometry(TERRAIN_SIZE, TERRAIN_SIZE, TERRAIN_SEGMENTS, TERRAIN_SEGMENTS);
     // Rotate plane so XZ represents the horizontal ground and Y represents height
     geom.rotateX(-Math.PI / 2);
@@ -135,11 +135,26 @@ export function Terrain({ glowActive }) {
     const gridGeom = new THREE.BufferGeometry();
     gridGeom.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
 
-    return [gridGeom, LANDING_PADS];
+    // We also need to compute the vertex normals of geom to ensure it can clear/occlude properly
+    geom.computeVertexNormals();
+
+    return [gridGeom, geom, LANDING_PADS];
   }, [noiseGen]);
 
   return (
     <group>
+      {/* Solid Terrain Backface Blocker */}
+      <mesh geometry={solidGeometry}>
+        <meshBasicMaterial 
+          color="#020204" 
+          depthWrite={true} 
+          toneMapped={false}
+          polygonOffset={true}
+          polygonOffsetFactor={1.0}
+          polygonOffsetUnits={1.0}
+        />
+      </mesh>
+
       {/* Wireframe Terrain Lines */}
       <lineSegments geometry={terrainGeometry}>
         <lineBasicMaterial 

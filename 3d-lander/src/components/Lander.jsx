@@ -274,6 +274,17 @@ export function Lander({ gameState, setGameState, inputRef, telemetryRef, camera
         <mesh position={[0, 0, 0]}>
           <cylinderGeometry args={[2.5, 3.5, 2.0, 8]} />
           <meshBasicMaterial 
+            color="#020204"
+            depthWrite={true}
+            toneMapped={false}
+            polygonOffset={true}
+            polygonOffsetFactor={1}
+            polygonOffsetUnits={1}
+          />
+        </mesh>
+        <mesh position={[0, 0, 0]}>
+          <cylinderGeometry args={[2.5, 3.5, 2.0, 8]} />
+          <meshBasicMaterial 
             color={glowActive ? new THREE.Color("#ffffff").multiplyScalar(1.8) : "#ffffff"} 
             toneMapped={false}
             wireframe={true} 
@@ -281,6 +292,17 @@ export function Lander({ gameState, setGameState, inputRef, telemetryRef, camera
         </mesh>
   
         {/* Lander Cockpit Sphere Dome */}
+        <mesh position={[0, 1.2, 0]}>
+          <sphereGeometry args={[2.2, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2]} />
+          <meshBasicMaterial 
+            color="#020204"
+            depthWrite={true}
+            toneMapped={false}
+            polygonOffset={true}
+            polygonOffsetFactor={1}
+            polygonOffsetUnits={1}
+          />
+        </mesh>
         <mesh position={[0, 1.2, 0]}>
           <sphereGeometry args={[2.2, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2]} />
           <meshBasicMaterial 
@@ -316,6 +338,17 @@ export function Lander({ gameState, setGameState, inputRef, telemetryRef, camera
               <mesh position={[1.5, -0.6, 0]} rotation={[0, 0, 0]}>
                 <cylinderGeometry args={[0.6, 0.6, 0.15, 6]} />
                 <meshBasicMaterial 
+                  color="#020204"
+                  depthWrite={true}
+                  toneMapped={false}
+                  polygonOffset={true}
+                  polygonOffsetFactor={1}
+                  polygonOffsetUnits={1}
+                />
+              </mesh>
+              <mesh position={[1.5, -0.6, 0]} rotation={[0, 0, 0]}>
+                <cylinderGeometry args={[0.6, 0.6, 0.15, 6]} />
+                <meshBasicMaterial 
                   color={glowActive ? new THREE.Color("#ffffff").multiplyScalar(1.8) : "#ffffff"} 
                   toneMapped={false}
                   wireframe={true} 
@@ -326,6 +359,17 @@ export function Lander({ gameState, setGameState, inputRef, telemetryRef, camera
         })}
   
         {/* Main Engine Nozzle */}
+        <mesh position={[0, -1.2, 0]}>
+          <cylinderGeometry args={[0.3, 0.8, 0.6, 6]} />
+          <meshBasicMaterial 
+            color="#020204"
+            depthWrite={true}
+            toneMapped={false}
+            polygonOffset={true}
+            polygonOffsetFactor={1}
+            polygonOffsetUnits={1}
+          />
+        </mesh>
         <mesh position={[0, -1.2, 0]}>
           <cylinderGeometry args={[0.3, 0.8, 0.6, 6]} />
           <meshBasicMaterial 
