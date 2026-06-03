@@ -59,10 +59,17 @@ export const LANDING_PADS = [
   { x: -120, z: 100, y: 12, radius: 8, multiplier: 4, color: '#ff007f', label: 'HARD' },
 ];
 
+// Statically pre-allocated geometries for landing pads (since pad positions and radii are constant)
+const padGeometries = LANDING_PADS.map(pad => ({
+  ringGeom: new THREE.RingGeometry(pad.radius - 1, pad.radius, 32),
+  centerGeom: new THREE.RingGeometry(0, 0.5, 4),
+  borderGeom: new THREE.CircleGeometry(pad.radius, 8)
+}));
+
 export function Terrain({ glowActive, hiddenLineActive }) {
   const noiseGen = useMemo(() => new SimpleNoise(0.85), []);
 
-  const [terrainGeometry, solidGeometry, padsGrid] = useMemo(() => {
+  const [terrainGeometry, solidGeometry] = useMemo(() => {
     const geom = new THREE.PlaneGeometry(TERRAIN_SIZE, TERRAIN_SIZE, TERRAIN_SEGMENTS, TERRAIN_SEGMENTS);
     // Rotate plane so XZ represents the horizontal ground and Y represents height
     geom.rotateX(-Math.PI / 2);
@@ -92,9 +99,11 @@ export function Terrain({ glowActive, hiddenLineActive }) {
         const dz = z - pad.z;
         const dist = Math.sqrt(dx * dx + dz * dz);
 
-        if (dist < pad.radius + 6) {
+        // Extended flat zone radius (pad.radius + 2) to prevent clipping of landing pad circle rings
+        const flatRadius = pad.radius + 2;
+        if (dist < flatRadius + 6) {
           // Soft-step transition zone
-          const smooth = 1 - THREE.MathUtils.smoothstep(dist, pad.radius, pad.radius + 6);
+          const smooth = 1 - THREE.MathUtils.smoothstep(dist, flatRadius, flatRadius + 6);
           padInfluence = Math.max(padInfluence, smooth);
           // Combine pad target heights
           if (smooth > 0) {
@@ -138,8 +147,32 @@ export function Terrain({ glowActive, hiddenLineActive }) {
     // We also need to compute the vertex normals of geom to ensure it can clear/occlude properly
     geom.computeVertexNormals();
 
-    return [gridGeom, geom, LANDING_PADS];
+    return [gridGeom, geom];
   }, [noiseGen]);
+
+  // Memoize pad materials based on glowActive status
+  const padsMaterials = useMemo(() => {
+    return LANDING_PADS.map(pad => {
+      const innerMaterial = new THREE.MeshBasicMaterial({
+        color: glowActive ? new THREE.Color(pad.color).multiplyScalar(2.0) : new THREE.Color(pad.color),
+        toneMapped: false,
+        side: THREE.DoubleSide
+      });
+      const centerMaterial = new THREE.MeshBasicMaterial({
+        color: glowActive ? new THREE.Color(pad.color).multiplyScalar(2.0) : new THREE.Color(pad.color),
+        toneMapped: false,
+        side: THREE.DoubleSide
+      });
+      const borderMaterial = new THREE.MeshBasicMaterial({
+        color: glowActive ? new THREE.Color(pad.color).multiplyScalar(1.5) : new THREE.Color(pad.color),
+        toneMapped: false,
+        wireframe: true,
+        opacity: glowActive ? 0.65 : 0.3,
+        transparent: true
+      });
+      return { innerMaterial, centerMaterial, borderMaterial };
+    });
+  }, [glowActive]);
 
   return (
     <group>
@@ -166,64 +199,45 @@ export function Terrain({ glowActive, hiddenLineActive }) {
       </lineSegments>
 
       {/* Render Landing Pads */}
-      {padsGrid.map((pad, idx) => (
-        <group key={idx} position={[pad.x, pad.y + 0.1, pad.z]}>
-          {/* Inner landing circle */}
-          <mesh rotation={[-Math.PI / 2, 0, 0]}>
-            <ringGeometry args={[pad.radius - 1, pad.radius, 32]} />
-            <meshBasicMaterial 
-              color={glowActive ? new THREE.Color(pad.color).multiplyScalar(2.0) : pad.color} 
-              toneMapped={false}
-              side={THREE.DoubleSide} 
-            />
-          </mesh>
+      {LANDING_PADS.map((pad, idx) => {
+        const { ringGeom, centerGeom, borderGeom } = padGeometries[idx];
+        const { innerMaterial, centerMaterial, borderMaterial } = padsMaterials[idx];
+        return (
+          <group key={idx} position={[pad.x, pad.y + 0.35, pad.z]}>
+            {/* Inner landing circle */}
+            <mesh rotation={[-Math.PI / 2, 0, 0]} geometry={ringGeom} material={innerMaterial} />
 
-          {/* Dynamic grid marker in circle center */}
-          <mesh rotation={[-Math.PI / 2, 0, 0]}>
-            <ringGeometry args={[0, 0.5, 4]} />
-            <meshBasicMaterial 
-              color={glowActive ? new THREE.Color(pad.color).multiplyScalar(2.0) : pad.color} 
-              toneMapped={false}
-              side={THREE.DoubleSide} 
-            />
-          </mesh>
+            {/* Dynamic grid marker in circle center */}
+            <mesh rotation={[-Math.PI / 2, 0, 0]} geometry={centerGeom} material={centerMaterial} />
 
-          {/* Pad border lines for CRT grid feel */}
-          <mesh rotation={[-Math.PI / 2, 0, 0]}>
-            <circleGeometry args={[pad.radius, 8]} />
-            <meshBasicMaterial 
-              color={glowActive ? new THREE.Color(pad.color).multiplyScalar(1.5) : pad.color} 
-              toneMapped={false}
-              wireframe={true} 
-              opacity={glowActive ? 0.65 : 0.3} 
-              transparent={true} 
-            />
-          </mesh>
+            {/* Pad border lines for CRT grid feel */}
+            <mesh rotation={[-Math.PI / 2, 0, 0]} geometry={borderGeom} material={borderMaterial} />
 
-          {/* Holographic Text Multiplier */}
-          <Text
-            position={[0, 4, 0]}
-            fontSize={2.5}
-            color={glowActive ? new THREE.Color(pad.color).multiplyScalar(2.0) : pad.color}
-            font="/orbitron.ttf"
-            anchorX="center"
-            anchorY="middle"
-          >
-            {`${pad.multiplier}X`}
-          </Text>
-          <Text
-            position={[0, 1.5, 0]}
-            fontSize={1.2}
-            color={glowActive ? new THREE.Color(pad.color).multiplyScalar(1.5) : pad.color}
-            font="/sharetechmono.ttf"
-            anchorX="center"
-            anchorY="middle"
-            opacity={glowActive ? 0.95 : 0.7}
-          >
-            {pad.label}
-          </Text>
-        </group>
-      ))}
+            {/* Holographic Text Multiplier */}
+            <Text
+              position={[0, 4, 0]}
+              fontSize={2.5}
+              color={glowActive ? new THREE.Color(pad.color).multiplyScalar(2.0) : pad.color}
+              font="/orbitron.ttf"
+              anchorX="center"
+              anchorY="middle"
+            >
+              {`${pad.multiplier}X`}
+            </Text>
+            <Text
+              position={[0, 1.5, 0]}
+              fontSize={1.2}
+              color={glowActive ? new THREE.Color(pad.color).multiplyScalar(1.5) : pad.color}
+              font="/sharetechmono.ttf"
+              anchorX="center"
+              anchorY="middle"
+              opacity={glowActive ? 0.95 : 0.7}
+            >
+              {pad.label}
+            </Text>
+          </group>
+        );
+      })}
     </group>
   );
 }
@@ -248,8 +262,9 @@ export function getTerrainHeight(x, z, noiseGen) {
     const dz = z - pad.z;
     const dist = Math.sqrt(dx * dx + dz * dz);
 
-    if (dist < pad.radius + 6) {
-      const smooth = 1 - THREE.MathUtils.smoothstep(dist, pad.radius, pad.radius + 6);
+    const flatRadius = pad.radius + 2;
+    if (dist < flatRadius + 6) {
+      const smooth = 1 - THREE.MathUtils.smoothstep(dist, flatRadius, flatRadius + 6);
       padInfluence = Math.max(padInfluence, smooth);
       if (smooth > 0) {
         targetHeight = pad.y;

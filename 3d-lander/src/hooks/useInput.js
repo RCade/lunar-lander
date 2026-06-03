@@ -65,24 +65,24 @@ export function useInput() {
     inputs.current.translateZ = 0;
 
     if (isShiftHeld) {
-      // Translation Mode: Arrow keys or WASD translate local X/Z
-      if (keys['ArrowUp'] || keys['KeyW']) inputs.current.translateZ = 1;   // Forward
-      if (keys['ArrowDown'] || keys['KeyS']) inputs.current.translateZ = -1; // Backward
-      if (keys['ArrowLeft'] || keys['KeyA']) inputs.current.translateX = -1; // Left
-      if (keys['ArrowRight'] || keys['KeyD']) inputs.current.translateX = 1;  // Right
+      // Translation Mode: Arrow keys or WASD translate local X/Z (Inverted X, Original Z)
+      if (keys['ArrowUp'] || keys['KeyW']) inputs.current.translateZ = 1;    // Forward
+      if (keys['ArrowDown'] || keys['KeyS']) inputs.current.translateZ = -1;  // Backward
+      if (keys['ArrowLeft'] || keys['KeyA']) inputs.current.translateX = 1;   // Left is now Right
+      if (keys['ArrowRight'] || keys['KeyD']) inputs.current.translateX = -1; // Right is now Left
     } else {
-      // Rotation Mode
+      // Rotation Mode (Inverted Roll/Yaw, Original Pitch)
       // Pitch (Up/Down arrows or I/K keys)
       if (keys['ArrowUp'] || keys['KeyI']) inputs.current.pitch = -1;    // Nose Down (negative torque)
       if (keys['ArrowDown'] || keys['KeyK']) inputs.current.pitch = 1;   // Nose Up (positive torque)
 
       // Roll (Left/Right arrows or J/L keys)
-      if (keys['ArrowLeft'] || keys['KeyJ']) inputs.current.roll = -1;   // Roll Left
-      if (keys['ArrowRight'] || keys['KeyL']) inputs.current.roll = 1;   // Roll Right
+      if (keys['ArrowLeft'] || keys['KeyJ']) inputs.current.roll = 1;    // Roll Left is now Roll Right
+      if (keys['ArrowRight'] || keys['KeyL']) inputs.current.roll = -1;  // Roll Right is now Roll Left
 
       // Yaw (A/D or Q/E keys)
-      if (keys['KeyQ'] || keys['KeyA']) inputs.current.yaw = -1;         // Yaw Left
-      if (keys['KeyE'] || keys['KeyD']) inputs.current.yaw = 1;          // Yaw Right
+      if (keys['KeyQ'] || keys['KeyA']) inputs.current.yaw = 1;          // Yaw Left is now Yaw Right
+      if (keys['KeyE'] || keys['KeyD']) inputs.current.yaw = -1;         // Yaw Right is now Yaw Left
     }
   };
 

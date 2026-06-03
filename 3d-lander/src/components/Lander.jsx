@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { soundEngine } from './SoundEngine';
@@ -18,6 +18,42 @@ const I_XX = 1200;           // kg*m^2
 const I_YY = 900;
 const I_ZZ = 1200;
 
+// Static geometries and configs for RCS pods and flames
+const rcsPodGeom = new THREE.BoxGeometry(0.35, 0.35, 0.35);
+const rcsFlameGeom = new THREE.ConeGeometry(0.18, 1.2, 4);
+rcsFlameGeom.translate(0, 0.6, 0); // shift origin to base of the cone (half of height 1.2)
+
+const occludingMaterial = new THREE.MeshBasicMaterial({
+  color: "#020204",
+  depthWrite: true,
+  toneMapped: false,
+  polygonOffset: true,
+  polygonOffsetFactor: 1.0,
+  polygonOffsetUnits: 1.0
+});
+
+const RCS_JETS = [
+  // Left Pod (pos: [-3.0, 0.5, 0])
+  { podPos: [-3.0, 0.5, 0], jetPos: [-0.175, 0, 0], rot: [0, 0, Math.PI / 2], check: (input) => input.translateX > 0 }, // shoots Left (-X) when translating right (+X)
+  { podPos: [-3.0, 0.5, 0], jetPos: [0, -0.175, 0], rot: [Math.PI, 0, 0], check: (input) => input.roll === 1 }, // shoots Down (-Y) when rolling right
+  { podPos: [-3.0, 0.5, 0], jetPos: [0, 0, -0.175], rot: [-Math.PI / 2, 0, 0], check: (input) => input.yaw < 0 }, // shoots Forward (-Z) when yaw left
+  { podPos: [-3.0, 0.5, 0], jetPos: [0, 0, 0.175], rot: [Math.PI / 2, 0, 0], check: (input) => input.yaw > 0 },  // shoots Backward (+Z) when yaw right
+
+  // Right Pod (pos: [3.0, 0.5, 0])
+  { podPos: [3.0, 0.5, 0], jetPos: [0.175, 0, 0], rot: [0, 0, -Math.PI / 2], check: (input) => input.translateX < 0 }, // shoots Right (+X) when translating left (-X)
+  { podPos: [3.0, 0.5, 0], jetPos: [0, -0.175, 0], rot: [Math.PI, 0, 0], check: (input) => input.roll === -1 }, // shoots Down (-Y) when rolling left
+  { podPos: [3.0, 0.5, 0], jetPos: [0, 0, 0.175], rot: [Math.PI / 2, 0, 0], check: (input) => input.yaw < 0 },    // shoots Backward (+Z) when yaw left
+  { podPos: [3.0, 0.5, 0], jetPos: [0, 0, -0.175], rot: [-Math.PI / 2, 0, 0], check: (input) => input.yaw > 0 },   // shoots Forward (-Z) when yaw right
+
+  // Front Pod (pos: [0, 0.5, -3.0])
+  { podPos: [0, 0.5, -3.0], jetPos: [0, 0, -0.175], rot: [-Math.PI / 2, 0, 0], check: (input) => input.translateZ < 0 }, // shoots Forward (-Z) when translating backward
+  { podPos: [0, 0.5, -3.0], jetPos: [0, -0.175, 0], rot: [Math.PI, 0, 0], check: (input) => input.pitch === 1 },  // shoots Down (-Y) when pitching up
+
+  // Back Pod (pos: [0, 0.5, 3.0])
+  { podPos: [0, 0.5, 3.0], jetPos: [0, 0, 0.175], rot: [Math.PI / 2, 0, 0], check: (input) => input.translateZ > 0 },  // shoots Backward (+Z) when translating forward
+  { podPos: [0, 0.5, 3.0], jetPos: [0, -0.175, 0], rot: [Math.PI, 0, 0], check: (input) => input.pitch === -1 } // shoots Down (-Y) when pitching down
+];
+
 export function Lander({ gameState, setGameState, inputRef, telemetryRef, cameraRef, glowActive, hiddenLineActive }) {
   const landerRef = useRef();
   const visualGroupRef = useRef();
@@ -28,6 +64,21 @@ export function Lander({ gameState, setGameState, inputRef, telemetryRef, camera
       blobRefs.current.push(React.createRef());
     }
   }
+
+  const rcsFlameRefs = useRef([]);
+  if (rcsFlameRefs.current.length === 0) {
+    for (let i = 0; i < 12; i++) {
+      rcsFlameRefs.current.push(React.createRef());
+    }
+  }
+
+  const rcsFlameMaterial = useMemo(() => {
+    return new THREE.MeshBasicMaterial({
+      color: glowActive ? new THREE.Color("#ff5100").multiplyScalar(3.0) : "#ff5100",
+      toneMapped: false,
+      wireframe: true
+    });
+  }, [glowActive]);
 
   // Physics state refs to avoid React re-render lags
   const physicsState = useRef({
@@ -52,6 +103,10 @@ export function Lander({ gameState, setGameState, inputRef, telemetryRef, camera
   ]);
 
   // Re-initialization when resetting levels
+  useEffect(() => {
+    window.__physicsState = physicsState;
+  }, []);
+
   useEffect(() => {
     if (gameState === 'playing') {
       physicsState.current.position.set(0, 150, 0);
@@ -293,6 +348,20 @@ export function Lander({ gameState, setGameState, inputRef, telemetryRef, camera
       });
     }
 
+    // --- RCS JETS FLAME ANIMATION ---
+    RCS_JETS.forEach((jet, index) => {
+      const ref = rcsFlameRefs.current[index]?.current;
+      if (ref) {
+        const isFiring = hasFuel && gameState === 'playing' && jet.check(input);
+        ref.visible = isFiring;
+        if (isFiring) {
+          // Flicker scale along height (Y axis in translated cone space)
+          const flicker = 0.5 + Math.random() * 0.8;
+          ref.scale.set(1.0, flicker, 1.0);
+        }
+      }
+    });
+
     // --- WRITE TELEMETRY REF FOR HUD ---
     const tilt = Math.acos(THREE.MathUtils.clamp(localUp.dot(new THREE.Vector3(0, 1, 0)), -1, 1)) * (180 / Math.PI);
     telemetryRef.current = {
@@ -498,6 +567,46 @@ export function Lander({ gameState, setGameState, inputRef, telemetryRef, camera
             </group>
           ))}
         </group>
+
+        {/* Physical RCS Pod Housings */}
+        {[
+          [-3.0, 0.5, 0],
+          [3.0, 0.5, 0],
+          [0, 0.5, -3.0],
+          [0, 0.5, 3.0]
+        ].map((pos, idx) => (
+          <group key={idx} position={pos}>
+            <mesh visible={hiddenLineActive} geometry={rcsPodGeom} material={occludingMaterial} />
+            <mesh geometry={rcsPodGeom}>
+              <meshBasicMaterial 
+                color={glowActive ? new THREE.Color("#ffffff").multiplyScalar(1.8) : "#ffffff"} 
+                toneMapped={false}
+                wireframe={true} 
+              />
+            </mesh>
+          </group>
+        ))}
+
+        {/* RCS Jets Flames */}
+        {RCS_JETS.map((jet, index) => {
+          const nozzlePos = [
+            jet.podPos[0] + jet.jetPos[0],
+            jet.podPos[1] + jet.jetPos[1],
+            jet.podPos[2] + jet.jetPos[2]
+          ];
+          return (
+            <group 
+              key={index} 
+              ref={rcsFlameRefs.current[index]} 
+              position={nozzlePos} 
+              rotation={jet.rot}
+              visible={false}
+            >
+              <mesh visible={hiddenLineActive} geometry={rcsFlameGeom} material={occludingMaterial} />
+              <mesh geometry={rcsFlameGeom} material={rcsFlameMaterial} />
+            </group>
+          );
+        })}
   
         {/* RCS Jets HUD Visualizer (lines shooting out) */}
         {gameState === 'playing' && inputRef.current.yaw !== 0 && (

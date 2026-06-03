@@ -7,7 +7,7 @@ import { Lander } from './components/Lander';
 import { Terrain, LANDING_PADS } from './components/Terrain';
 import { Starfield } from './components/Starfield';
 import { Cockpit } from './components/Cockpit';
-import { EffectComposer, Bloom } from '@react-three/postprocessing';
+import { EffectComposer, Bloom, SMAA } from '@react-three/postprocessing';
 import { ThreeWayViewport } from './components/ThreeWayViewport';
 
 // --- Throttled UI Telemetry Updater ---
@@ -27,7 +27,8 @@ function TelemetryListener({ telemetryRef, setUiTelemetry }) {
 }
 
 // --- 3D Camera Spring-Damper Controller ---
-function CameraController({ cameraMode, telemetryRef }) {
+// --- 3D Camera Spring-Damper Controller ---
+function CameraController({ telemetryRef }) {
   const velCamera = useRef(new THREE.Vector3(0, 0, 0));
   const isFirstFrame = useRef(true);
 
@@ -40,6 +41,7 @@ function CameraController({ cameraMode, telemetryRef }) {
     const up = tel.upVector;
     const localForward = tel.forwardVector;
     const localRight = tel.rightVector;
+    const cameraMode = tel.cameraMode;
 
     const dt = Math.min(delta, 0.03); // clamp time step to prevent physics explosion
     if (state.clock.getElapsedTime() % 1 < 0.05) { // Log once every second
@@ -100,6 +102,65 @@ function CameraController({ cameraMode, telemetryRef }) {
 
   return null;
 }
+
+// Memoized 3D canvas wrapper to completely avoid React reconciliation on telemetry updates
+const SimulationCanvas = React.memo(({
+  glowActive,
+  hiddenLineActive,
+  splitViewActive,
+  gameState,
+  setGameState,
+  inputs,
+  telemetryRef,
+  antialiasActive,
+  setUiTelemetry
+}) => {
+  return (
+    <Canvas
+      dpr={typeof window !== 'undefined' ? Math.min(window.devicePixelRatio, 2) : 1}
+      gl={{ 
+        antialias: false, // Disable native context AA to avoid double resolves with composer
+        powerPreference: 'high-performance', 
+        alpha: false, 
+        stencil: false, 
+        depth: true,
+        toneMapping: THREE.NoToneMapping 
+      }}
+      onCreated={({ gl }) => {
+        gl.setClearColor('#020204');
+      }}
+    >
+      <Suspense fallback={null}>
+        <ambientLight intensity={0.15} />
+        <Terrain glowActive={glowActive} hiddenLineActive={hiddenLineActive} />
+        <Lander
+          gameState={gameState}
+          setGameState={setGameState}
+          inputRef={inputs}
+          telemetryRef={telemetryRef}
+          glowActive={glowActive}
+          hiddenLineActive={hiddenLineActive}
+        />
+        <Starfield count={600} />
+        <Cockpit telemetryRef={telemetryRef} glowActive={glowActive} gameState={gameState} />
+        <CameraController telemetryRef={telemetryRef} />
+        <TelemetryListener telemetryRef={telemetryRef} setUiTelemetry={setUiTelemetry} />
+        {splitViewActive && <ThreeWayViewport telemetryRef={telemetryRef} />}
+        {!splitViewActive && (
+          <EffectComposer multisampling={0}>
+            <Bloom 
+              intensity={glowActive ? 2.2 : 0.0} 
+              luminanceThreshold={0.0} 
+              luminanceSmoothing={glowActive ? 0.8 : 0.0}
+              height={300}
+            />
+            {antialiasActive && <SMAA />}
+          </EffectComposer>
+        )}
+      </Suspense>
+    </Canvas>
+  );
+});
 
 export default function App() {
   const [gameState, setGameState] = useState('menu'); // menu, playing, landed, crashed
@@ -442,63 +503,18 @@ export default function App() {
       <div className="monitor-cabinet">
         <div className="screen-wrapper">
           
-          {/* React Three Fiber Canvas */}
-          <Canvas
-            dpr={typeof window !== 'undefined' ? Math.min(window.devicePixelRatio, 3) : 1}
-            gl={{ antialias: true, toneMapping: THREE.NoToneMapping }}
-            onCreated={({ gl }) => {
-              gl.setClearColor('#020204');
-            }}
-          >
-            <Suspense fallback={null}>
-              {/* Direct ambient fill */}
-              <ambientLight intensity={0.15} />
-
-              {/* Procedural 3D Terrain */}
-              <Terrain glowActive={glowActive} hiddenLineActive={hiddenLineActive} />
-
-              {/* 3D Lander */}
-              <Lander
-                gameState={gameState}
-                setGameState={setGameState}
-                inputRef={inputs}
-                telemetryRef={telemetryRef}
-                glowActive={glowActive}
-                hiddenLineActive={hiddenLineActive}
-              />
-
-              {/* Space particle field */}
-              <Starfield count={600} />
-
-              {/* First-person cockpit wireframe HUD */}
-              {uiTelemetry.cameraMode === 1 && gameState === 'playing' && (
-                <Cockpit telemetryRef={telemetryRef} glowActive={glowActive} />
-              )}
-
-              {/* Spring camera updates */}
-              <CameraController cameraMode={uiTelemetry.cameraMode} telemetryRef={telemetryRef} />
-
-              {/* Keep physics frame listener mapping to UI */}
-              <TelemetryListener telemetryRef={telemetryRef} setUiTelemetry={setUiTelemetry} />
-
-              {/* Manual Viewport split rendering */}
-              {splitViewActive && (
-                <ThreeWayViewport telemetryRef={telemetryRef} />
-              )}
-
-              {/* Glowing Vector Graphics Postprocessing */}
-              {!splitViewActive && (
-                <EffectComposer multisampling={antialiasActive ? 8 : 0}>
-                  <Bloom 
-                    intensity={glowActive ? 2.2 : 0.0} 
-                    luminanceThreshold={0.0} 
-                    luminanceSmoothing={glowActive ? 0.8 : 0.0}
-                    height={300}
-                  />
-                </EffectComposer>
-              )}
-            </Suspense>
-          </Canvas>
+          {/* Memoized React Three Fiber Canvas */}
+          <SimulationCanvas
+            glowActive={glowActive}
+            hiddenLineActive={hiddenLineActive}
+            splitViewActive={splitViewActive}
+            gameState={gameState}
+            setGameState={setGameState}
+            inputs={inputs}
+            telemetryRef={telemetryRef}
+            antialiasActive={antialiasActive}
+            setUiTelemetry={setUiTelemetry}
+          />
 
           {/* Viewport split screen borders */}
           {splitViewActive && (
