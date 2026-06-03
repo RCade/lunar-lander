@@ -1,0 +1,1684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>APOLLO LANDER // CRT VECTOR ARCADE</title>
+    
+    <!-- Retro & Tech Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Press+Start+2P&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Modern Obsidian Design System */
+        :root {
+            --bg-darker: #050608;
+            --bg-dark: #0b0e14;
+            --bg-panel: rgba(18, 24, 38, 0.7);
+            --border-glow: rgba(0, 240, 255, 0.2);
+            --border-glow-active: rgba(0, 240, 255, 0.5);
+            
+            --vector-cyan: #00f0ff;
+            --vector-green: #39ff14;
+            --vector-amber: #ffb700;
+            --vector-red: #ff3c3c;
+            --vector-pink: #ff007f;
+            --vector-white: #e2e8f0;
+            
+            --glow-cyan: 0 0 10px rgba(0, 240, 255, 0.6), 0 0 20px rgba(0, 240, 255, 0.2);
+            --glow-green: 0 0 10px rgba(57, 255, 20, 0.6), 0 0 20px rgba(57, 255, 20, 0.2);
+            --glow-amber: 0 0 10px rgba(255, 183, 0, 0.6), 0 0 20px rgba(255, 183, 0, 0.2);
+            --glow-red: 0 0 10px rgba(255, 60, 60, 0.6), 0 0 20px rgba(255, 60, 60, 0.2);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-darker);
+            background-image: 
+                radial-gradient(circle at 50% 50%, #152035 0%, #050608 100%),
+                linear-gradient(rgba(18, 24, 38, 0.4) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(18, 24, 38, 0.4) 1px, transparent 1px);
+            background-size: 100% 100%, 40px 40px, 40px 40px;
+            color: var(--vector-white);
+            font-family: 'Share Tech Mono', monospace;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            padding: 20px;
+        }
+
+        /* Glassmorphic Header */
+        header {
+            width: 100%;
+            max-width: 1300px;
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px 30px;
+            background: var(--bg-panel);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-glow);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 900;
+            letter-spacing: 4px;
+            color: var(--vector-cyan);
+            text-shadow: var(--glow-cyan);
+        }
+
+        .header-stats {
+            display: flex;
+            gap: 20px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.65rem;
+        }
+
+        .header-stats span {
+            color: var(--vector-amber);
+            text-shadow: var(--glow-amber);
+        }
+
+        /* Main Workspace Container */
+        .game-container {
+            display: flex;
+            width: 100%;
+            max-width: 1300px;
+            gap: 20px;
+            justify-content: center;
+            align-items: stretch;
+        }
+
+        /* Sidebars - Instrument & Mission Control */
+        .sidebar {
+            flex: 0 0 310px;
+            background: var(--bg-panel);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-glow);
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .sidebar h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            color: var(--vector-cyan);
+            border-bottom: 1px solid var(--border-glow);
+            padding-bottom: 8px;
+            margin-bottom: 10px;
+            text-shadow: var(--glow-cyan);
+            letter-spacing: 2px;
+        }
+
+        .info-block {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(0, 240, 255, 0.1);
+            border-radius: 8px;
+            padding: 12px;
+        }
+
+        .info-block h3 {
+            font-size: 0.85rem;
+            color: var(--vector-amber);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .key-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+            font-size: 0.85rem;
+        }
+
+        .key-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .kbd-key {
+            background: #1a2233;
+            border: 1px solid var(--vector-cyan);
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: bold;
+            font-size: 0.75rem;
+            box-shadow: 0 0 5px rgba(0, 240, 255, 0.3);
+            color: var(--vector-cyan);
+        }
+
+        /* Central CRT Cabinet Monitor */
+        .monitor-cabinet {
+            flex: 1; /* Main view takes all remaining space */
+            position: relative;
+            background: #020203;
+            border: 15px solid #14171f;
+            border-radius: 20px;
+            box-shadow: 
+                0 0 0 4px #0b0e14,
+                0 15px 40px rgba(0, 0, 0, 0.8),
+                inset 0 0 30px rgba(0, 240, 255, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* Canvas Wrapper & Curved Glare Display */
+        .screen-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 820px;
+            aspect-ratio: 680 / 520;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.8);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background-color: #030508;
+        }
+
+        /* Realistic CRT Effect Layers */
+        .scanlines {
+            pointer-events: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                rgba(18, 16, 16, 0) 50%, 
+                rgba(0, 0, 0, 0.25) 50%
+            ), linear-gradient(
+                90deg,
+                rgba(255, 0, 0, 0.03),
+                rgba(0, 255, 0, 0.01),
+                rgba(0, 0, 255, 0.03)
+            );
+            background-size: 100% 4px, 6px 100%;
+            z-index: 10;
+        }
+
+        .crt-glare {
+            pointer-events: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(
+                circle at 50% 15%, 
+                rgba(255, 255, 255, 0.06) 0%, 
+                rgba(255, 255, 255, 0) 70%
+            );
+            z-index: 11;
+        }
+
+        /* CRT Screen Flicker */
+        @keyframes crt-flicker {
+            0% { opacity: 0.991; }
+            50% { opacity: 1; }
+            100% { opacity: 0.993; }
+        }
+
+        .crt-flicker-overlay {
+            pointer-events: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 240, 255, 0.005);
+            animation: crt-flicker 0.15s infinite;
+            z-index: 12;
+        }
+
+        /* Overlay Screens inside Cabinet */
+        .overlay-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(3, 5, 8, 0.85);
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            text-align: center;
+            transition: opacity 0.3s ease;
+        }
+
+        .overlay-screen.hidden {
+            display: none !important;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .overlay-screen h2 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 1.5rem;
+            margin-bottom: 25px;
+            letter-spacing: 2px;
+        }
+
+        .overlay-screen .msg-primary {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: var(--vector-white);
+        }
+
+        .overlay-screen .msg-secondary {
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 30px;
+            line-height: 1.6;
+            max-width: 500px;
+        }
+
+        .btn-arcade {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--vector-cyan);
+            background: transparent;
+            border: 2px solid var(--vector-cyan);
+            border-radius: 8px;
+            padding: 12px 30px;
+            cursor: pointer;
+            outline: none;
+            letter-spacing: 2px;
+            text-shadow: var(--glow-cyan);
+            box-shadow: 
+                inset 0 0 10px rgba(0, 240, 255, 0.2),
+                0 0 15px rgba(0, 240, 255, 0.1);
+            transition: all 0.2s ease;
+            animation: btn-glow-pulse 1.5s infinite alternate;
+        }
+
+        @keyframes btn-glow-pulse {
+            from {
+                box-shadow: inset 0 0 5px rgba(0, 240, 255, 0.2), 0 0 10px rgba(0, 240, 255, 0.1);
+                border-color: rgba(0, 240, 255, 0.6);
+            }
+            to {
+                box-shadow: inset 0 0 15px rgba(0, 240, 255, 0.4), 0 0 20px rgba(0, 240, 255, 0.3);
+                border-color: rgba(0, 240, 255, 1);
+            }
+        }
+
+        .btn-arcade:hover {
+            background: var(--vector-cyan);
+            color: var(--bg-darker);
+            text-shadow: none;
+            box-shadow: 0 0 25px rgba(0, 240, 255, 0.6);
+        }
+
+        /* Color classes for overlays */
+        .color-cyan { color: var(--vector-cyan); text-shadow: var(--glow-cyan); }
+        .color-green { color: var(--vector-green); text-shadow: var(--glow-green); }
+        .color-amber { color: var(--vector-amber); text-shadow: var(--glow-amber); }
+        .color-red { color: var(--vector-red); text-shadow: var(--glow-red); }
+
+        /* Game HUD values list */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .stat-card {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(0, 240, 255, 0.08);
+            border-radius: 6px;
+            padding: 8px 6px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .stat-card .label {
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .stat-card .value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--vector-white);
+            white-space: nowrap;
+        }
+
+        /* Fuel Meter in Sidebar */
+        .fuel-meter-container {
+            width: 100%;
+            height: 16px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 5px;
+            position: relative;
+        }
+
+        .fuel-meter-bar {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, var(--vector-cyan), #00ffaa);
+            box-shadow: 0 0 8px rgba(0, 240, 255, 0.5);
+            transition: width 0.1s linear, background 0.3s ease;
+        }
+
+        .fuel-meter-bar.low {
+            background: linear-gradient(90deg, var(--vector-red), #ff5500);
+            box-shadow: 0 0 8px rgba(255, 60, 60, 0.6);
+            animation: fuel-blink 0.5s infinite alternate;
+        }
+
+        @keyframes fuel-blink {
+            from { opacity: 0.5; }
+            to { opacity: 1; }
+        }
+
+        /* Achievements / Log List */
+        .log-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 180px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .log-list::-webkit-scrollbar {
+            width: 4px;
+        }
+        .log-list::-webkit-scrollbar-thumb {
+            background: var(--border-glow);
+            border-radius: 2px;
+        }
+
+        .log-item {
+            font-size: 0.75rem;
+            padding: 6px;
+            border-left: 2px solid var(--vector-cyan);
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 0 4px 4px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .log-item.success {
+            border-left-color: var(--vector-green);
+        }
+
+        .log-item.failed {
+            border-left-color: var(--vector-red);
+        }
+
+        /* Audio controls */
+        .audio-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            padding: 8px 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(0, 240, 255, 0.15);
+            border-radius: 6px;
+            transition: border-color 0.2s ease;
+        }
+
+        .audio-toggle:hover {
+            border-color: var(--vector-cyan);
+        }
+
+        .audio-icon {
+            font-size: 1rem;
+            color: var(--vector-cyan);
+            text-shadow: var(--glow-cyan);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>APOLLO // LANDER</h1>
+        <div class="header-stats">
+            <div>SCORE: <span id="score-val">00000</span></div>
+            <div>HI-SCORE: <span id="hiscore-val">02500</span></div>
+        </div>
+    </header>
+
+    <div class="game-container">
+        <!-- Left Sidebar: Unified Control Panel -->
+        <div class="sidebar">
+            <h2>CONTROL PANEL</h2>
+            
+            <!-- Fuel Stores block -->
+            <div class="info-block">
+                <h3>Fuel Stores</h3>
+                <div class="fuel-meter-container">
+                    <div class="fuel-meter-bar" id="hud-fuel-bar"></div>
+                </div>
+                <div class="key-row" style="margin-top: 8px;">
+                    <span id="hud-fuel-pct">FUEL: 100%</span>
+                </div>
+            </div>
+
+            <!-- Instrument Feeds stats grid -->
+            <div class="info-block">
+                <h3>Instrument Feeds</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <span class="label">V. Velocity</span>
+                        <span class="value" id="hud-vvel">0.0 m/s</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="label">H. Velocity</span>
+                        <span class="value" id="hud-hvel">0.0 m/s</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="label">Altitude</span>
+                        <span class="value" id="hud-alt">000 m</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="label">Pitch Angle</span>
+                        <span class="value" id="hud-pitch">0°</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thrust Systems block -->
+            <div class="info-block">
+                <h3>Thrust Systems</h3>
+                <div class="key-row">
+                    <span>Main Thruster</span>
+                    <span class="kbd-key">↑</span> or <span class="kbd-key">W</span>
+                </div>
+                <div class="key-row" style="margin-top: 4px;">
+                    <span>Rotate Craft</span>
+                    <span>
+                        <span class="kbd-key">←</span><span class="kbd-key">→</span> or 
+                        <span class="kbd-key">A</span><span class="kbd-key">D</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Sound Node block -->
+            <div class="info-block">
+                <h3>Sound Node</h3>
+                <div class="audio-toggle" id="audio-toggle-btn">
+                    <span>Audio Synthesizer</span>
+                    <span class="audio-icon" id="audio-status-icon">🔊 ON</span>
+                </div>
+            </div>
+
+            <!-- Telemetry Logs block -->
+            <div class="info-block" style="flex-grow: 1; display: flex; flex-direction: column; min-height: 150px;">
+                <h3>Telemetry Logs</h3>
+                <div class="log-list" id="telemetry-logs" style="flex-grow: 1; min-height: 90px; max-height: 130px;">
+                    <div class="log-item"><span>System initialized</span><span>0.0s</span></div>
+                    <div class="log-item"><span>Standing by on orbit</span><span>0.0s</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Central Cabinet containing the Vector display screen -->
+        <div class="monitor-cabinet">
+            <div class="screen-wrapper">
+                <!-- Overlay Canvas -->
+                <canvas id="vector-canvas" width="680" height="520"></canvas>
+
+                <!-- CRT Visual Effect Overlays -->
+                <div class="scanlines"></div>
+                <div class="crt-glare"></div>
+                <div class="crt-flicker-overlay"></div>
+
+                <!-- Game Screens Overlays -->
+                
+                <!-- 1. Start Screen -->
+                <div id="screen-start" class="overlay-screen">
+                    <h2 class="color-cyan">MISSION INITIALIZATION</h2>
+                    <p class="msg-primary">APOLLO FLIGHT DECK - MODULE 11</p>
+                    <p class="msg-secondary">
+                        Control descent speed and landing pitch carefully. Land on designated flat landing pads to replenish fuel and score multiplier bonuses. Avoid jagged terrain.
+                    </p>
+                    <button class="btn-arcade" id="btn-start">BOOT ENGINE SYSTEMS</button>
+                </div>
+
+                <!-- 2. Landing Screen -->
+                <div id="screen-landed" class="overlay-screen hidden">
+                    <h2 class="color-green">TOUCHDOWN SUCCESSFUL!</h2>
+                    <p class="msg-primary" id="landed-title">PERFECT SOFT TOUCHDOWN</p>
+                    <p class="msg-secondary" id="landed-desc">
+                        Landing Velocity: 0.8 m/s (SAFE)<br>
+                        Pad Multiplier: 5x Bonus achieved!
+                    </p>
+                    <button class="btn-arcade" id="btn-next-level">INIT NEXT DESCENT</button>
+                </div>
+
+                <!-- 3. Crash Screen -->
+                <div id="screen-crashed" class="overlay-screen hidden">
+                    <h2 class="color-red">CRAFT DESTROYED</h2>
+                    <p class="msg-primary" id="crash-title">HULL COLLAPSE / EXPLOSION</p>
+                    <p class="msg-secondary" id="crash-desc">
+                        Impact Velocity: 4.8 m/s (LIMIT EXCEEDED)<br>
+                        Astronauts lost on moon surface.
+                    </p>
+                    <button class="btn-arcade" id="btn-retry">REDEPLOY MODULE</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Web Audio Retro Synthesizer Engine ---
+        class RetroAudio {
+            constructor() {
+                this.ctx = null;
+                this.engineOsc = null;
+                this.engineNoise = null;
+                this.engineGain = null;
+                this.alarmOsc = null;
+                this.alarmGain = null;
+                this.alarmInterval = null;
+                this.muted = false;
+            }
+
+            init() {
+                if (this.ctx) return;
+                try {
+                    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioContextClass();
+                    
+                    // Create main engine synthesizer graph
+                    this.engineOsc = this.ctx.createOscillator();
+                    this.engineOsc.type = 'sawtooth';
+                    this.engineOsc.frequency.setValueAtTime(45, this.ctx.currentTime);
+                    
+                    // Noise buffer for combustion sound
+                    const bufferSize = this.ctx.sampleRate * 2;
+                    const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                    const output = noiseBuffer.getChannelData(0);
+                    for (let i = 0; i < bufferSize; i++) {
+                        output[i] = Math.random() * 2 - 1;
+                    }
+                    
+                    this.engineNoise = this.ctx.createBufferSource();
+                    this.engineNoise.buffer = noiseBuffer;
+                    this.engineNoise.loop = true;
+
+                    // Low-pass filter to sound like an engine combustion chamber
+                    const engineFilter = this.ctx.createBiquadFilter();
+                    engineFilter.type = 'lowpass';
+                    engineFilter.frequency.setValueAtTime(80, this.ctx.currentTime);
+
+                    this.engineGain = this.ctx.createGain();
+                    this.engineGain.gain.setValueAtTime(0, this.ctx.currentTime);
+
+                    // Connect engine synth nodes
+                    this.engineOsc.connect(engineFilter);
+                    
+                    const noiseGain = this.ctx.createGain();
+                    noiseGain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+                    this.engineNoise.connect(noiseGain);
+                    noiseGain.connect(engineFilter);
+
+                    engineFilter.connect(this.engineGain);
+                    this.engineGain.connect(this.ctx.destination);
+
+                    // Start engine generators
+                    this.engineOsc.start();
+                    this.engineNoise.start();
+
+                    // Alarm synthesizer nodes
+                    this.alarmGain = this.ctx.createGain();
+                    this.alarmGain.gain.setValueAtTime(0, this.ctx.currentTime);
+                    
+                    this.alarmOsc = this.ctx.createOscillator();
+                    this.alarmOsc.type = 'sine';
+                    this.alarmOsc.frequency.setValueAtTime(1200, this.ctx.currentTime);
+                    this.alarmOsc.connect(this.alarmGain);
+                    this.alarmGain.connect(this.ctx.destination);
+                    this.alarmOsc.start();
+
+                } catch (e) {
+                    console.error("Web Audio initialization failed", e);
+                }
+            }
+
+            setThrustLevel(level) {
+                if (!this.ctx || this.muted) return;
+                
+                // Ramp frequencies and gain depending on the keyboard thrust input level (0.0 to 1.0)
+                const now = this.ctx.currentTime;
+                const engineVol = level * 0.45;
+                const enginePitch = 45 + level * 65;
+
+                this.engineGain.gain.setTargetAtTime(engineVol, now, 0.05);
+                this.engineOsc.frequency.setTargetAtTime(enginePitch, now, 0.08);
+            }
+
+            startAlarm(isFast = false) {
+                if (!this.ctx || this.muted || this.alarmInterval) return;
+                
+                const rate = isFast ? 180 : 350;
+                let active = false;
+
+                this.alarmInterval = setInterval(() => {
+                    if (this.muted || !this.ctx) return;
+                    const now = this.ctx.currentTime;
+                    active = !active;
+                    if (active) {
+                        this.alarmOsc.frequency.setValueAtTime(isFast ? 1600 : 1000, now);
+                        this.alarmGain.gain.setValueAtTime(0.12, now);
+                    } else {
+                        this.alarmGain.gain.setValueAtTime(0, now);
+                    }
+                }, rate);
+            }
+
+            stopAlarm() {
+                if (this.alarmInterval) {
+                    clearInterval(this.alarmInterval);
+                    this.alarmInterval = null;
+                }
+                if (this.ctx && this.alarmGain) {
+                    this.alarmGain.gain.setValueAtTime(0, this.ctx.currentTime);
+                }
+            }
+
+            playExplosion() {
+                if (!this.ctx || this.muted) return;
+                const now = this.ctx.currentTime;
+
+                // Stop engine and warning alarms immediately
+                this.stopAlarm();
+                this.engineGain.gain.setValueAtTime(0, now);
+
+                // Create explosion node tree
+                const osc = this.ctx.createOscillator();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(100, now);
+                osc.frequency.exponentialRampToValueAtTime(10, now + 1.2);
+
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(300, now);
+                filter.frequency.exponentialRampToValueAtTime(30, now + 1.0);
+
+                const gainNode = this.ctx.createGain();
+                gainNode.gain.setValueAtTime(0.8, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 1.5);
+
+                // Mix in dynamic brown noise source for impact blast
+                const bufferSize = this.ctx.sampleRate * 1.5;
+                const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const output = noiseBuffer.getChannelData(0);
+                let lastOut = 0.0;
+                for (let i = 0; i < bufferSize; i++) {
+                    const white = Math.random() * 2 - 1;
+                    // Red/brown noise filter
+                    output[i] = (lastOut + (0.02 * white)) / 1.02;
+                    lastOut = output[i];
+                    output[i] *= 4.5; // boost volume
+                }
+
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = noiseBuffer;
+
+                osc.connect(filter);
+                noise.connect(filter);
+                filter.connect(gainNode);
+                gainNode.connect(this.ctx.destination);
+
+                osc.start(now);
+                noise.start(now);
+                osc.stop(now + 1.5);
+                noise.stop(now + 1.5);
+            }
+
+            playLandingTune() {
+                if (!this.ctx || this.muted) return;
+                const now = this.ctx.currentTime;
+
+                // Stop alarms & engine
+                this.stopAlarm();
+                this.engineGain.gain.setValueAtTime(0, now);
+
+                // Play retro chiptune arpeggio
+                const notes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99, 1046.50]; // C major arpeggio
+                notes.forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+
+                    const gain = this.ctx.createGain();
+                    gain.gain.setValueAtTime(0.15, now + idx * 0.08);
+                    gain.gain.exponentialRampToValueAtTime(0.005, now + idx * 0.08 + 0.35);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    osc.start(now + idx * 0.08);
+                    osc.stop(now + idx * 0.08 + 0.4);
+                });
+            }
+
+            toggleMute() {
+                this.muted = !this.muted;
+                if (this.muted) {
+                    this.stopAlarm();
+                    if (this.engineGain) {
+                        this.engineGain.gain.setValueAtTime(0, this.ctx ? this.ctx.currentTime : 0);
+                    }
+                }
+                return this.muted;
+            }
+        }
+
+        const audio = new RetroAudio();
+
+        // --- Vector Physics & Graphics Engine ---
+        const canvas = document.getElementById('vector-canvas');
+        const ctx = canvas.getContext('2d');
+
+        // State Machine
+        const STATES = { START: 0, PLAYING: 1, LANDED: 2, CRASHED: 3 };
+        let gameState = STATES.START;
+
+        // Visual constants for rendering glowing vector elements
+        const GLOW_SHADOW_BLUR = 8;
+
+        // Keyboard Status
+        const keys = {
+            ArrowUp: false, w: false,
+            ArrowLeft: false, a: false,
+            ArrowRight: false, d: false
+        };
+
+        // Game Configuration
+        let score = 0;
+        let highScore = 2500;
+        let level = 1;
+        let flightTime = 0.0;
+        let screenShake = 0;
+
+        // Lander Class definition
+        class Lander {
+            constructor() {
+                this.reset();
+            }
+
+            reset() {
+                this.x = 100;
+                this.y = 80;
+                this.vx = 1.8; // initial drift speed
+                this.vy = 0.0;
+                this.angle = 0;      // 0 is upright, in radians
+                this.angularVelocity = 0;
+                this.fuel = 1000;    // start fuel
+                this.maxFuel = 1000;
+                this.thrustActive = false;
+                
+                // Landing state variables
+                this.radius = 16;
+                this.width = 24;
+                this.height = 20;
+
+                // Lander leg compression animations
+                this.legCompression = 0; 
+            }
+
+            update(dt) {
+                if (gameState !== STATES.PLAYING) return;
+
+                // Rotational physics - thruster force applied
+                let rotationThrust = 0;
+                if (keys.ArrowLeft || keys.a) rotationThrust -= 3.5;
+                if (keys.ArrowRight || keys.d) rotationThrust += 3.5;
+
+                this.angularVelocity += rotationThrust * dt;
+                // Add natural space rotational dampening
+                this.angularVelocity *= Math.pow(0.94, dt * 60);
+                this.angle += this.angularVelocity * dt;
+
+                // Engine thrust physics
+                this.thrustActive = (keys.ArrowUp || keys.w) && this.fuel > 0;
+                
+                let ax = 0;
+                let ay = 0.45; // Constant Lunar gravity pulling downwards
+
+                if (this.thrustActive) {
+                    const thrustForce = 1.15;
+                    // Push direction is relative to craft angle (pointing upwards from lander's perspective)
+                    ax += Math.sin(this.angle) * thrustForce;
+                    ay -= Math.cos(this.angle) * thrustForce;
+                    
+                    // Consume fuel
+                    this.fuel = Math.max(0, this.fuel - 130 * dt);
+                    audio.setThrustLevel(1.0);
+
+                    // Eject hot particles from exhaust nozzle
+                    const ejectX = this.x - Math.sin(this.angle) * 12;
+                    const ejectY = this.y + Math.cos(this.angle) * 12;
+                    const spread = 0.35;
+                    const speed = 3.0 + Math.random() * 4.0;
+                    
+                    // Add standard exhaust velocity opposite to direction of craft facing plus random variance
+                    const pAngle = this.angle + Math.PI + (Math.random() - 0.5) * spread;
+                    const pVx = this.vx + Math.sin(pAngle) * speed;
+                    const pVy = this.vy - Math.cos(pAngle) * speed;
+
+                    particles.push(new ExhaustParticle(ejectX, ejectY, pVx, pVy));
+                } else {
+                    audio.setThrustLevel(0.0);
+                }
+
+                // Integrate physics
+                this.vx += ax * dt;
+                this.vy += ay * dt;
+                this.x += this.vx * 15 * dt; // Scale movement to screen coordinate speeds
+                this.y += this.vy * 15 * dt;
+
+                // Boundary clipping: Wrap sides, block ceiling
+                if (this.x < 0) this.x = canvas.width;
+                if (this.x > canvas.width) this.x = 0;
+                if (this.y < 0) {
+                    this.y = 0;
+                    this.vy = 0;
+                }
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+
+                // Setup glowing vector lines styling
+                ctx.lineWidth = 2.0;
+                ctx.strokeStyle = '#00f0ff';
+                ctx.shadowColor = '#00f0ff';
+                ctx.shadowBlur = GLOW_SHADOW_BLUR;
+                
+                // Draw Vector Cabin
+                ctx.beginPath();
+                ctx.moveTo(-10, -6);
+                ctx.lineTo(-4, -14);
+                ctx.lineTo(4, -14);
+                ctx.lineTo(10, -6);
+                ctx.lineTo(10, 4);
+                ctx.lineTo(-10, 4);
+                ctx.closePath();
+                ctx.stroke();
+
+                // Draw central fuel capsule core inside cabin
+                ctx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
+                ctx.beginPath();
+                ctx.arc(0, -1, 5, 0, Math.PI * 2);
+                ctx.stroke();
+
+                ctx.strokeStyle = '#00f0ff';
+                // Draw thruster bell at base
+                ctx.beginPath();
+                ctx.moveTo(-4, 4);
+                ctx.lineTo(-6, 9);
+                ctx.lineTo(6, 9);
+                ctx.lineTo(4, 4);
+                ctx.closePath();
+                ctx.stroke();
+
+                // Draw left and right landing legs/pads (interactive compression)
+                const cHeight = 10 - this.legCompression;
+
+                // Left Leg
+                ctx.beginPath();
+                ctx.moveTo(-10, 2);
+                ctx.lineTo(-15, cHeight);
+                ctx.lineTo(-19, cHeight + 2); // Footpad
+                ctx.moveTo(-15, cHeight);
+                ctx.lineTo(-9, 4);
+                ctx.stroke();
+
+                // Right Leg
+                ctx.beginPath();
+                ctx.moveTo(10, 2);
+                ctx.lineTo(15, cHeight);
+                ctx.lineTo(19, cHeight + 2); // Footpad
+                ctx.moveTo(15, cHeight);
+                ctx.lineTo(9, 4);
+                ctx.stroke();
+
+                // Draw main engine jet visual flames (vector lines)
+                if (this.thrustActive) {
+                    ctx.strokeStyle = '#ffb700';
+                    ctx.shadowColor = '#ff3c00';
+                    ctx.beginPath();
+                    ctx.moveTo(-5, 10);
+                    ctx.lineTo(0, 16 + Math.random() * 12);
+                    ctx.lineTo(5, 10);
+                    ctx.closePath();
+                    ctx.stroke();
+                }
+
+                ctx.restore();
+            }
+
+            // Return lower coordinates to test details of feet collision points
+            getLegPositions() {
+                const cos = Math.cos(this.angle);
+                const sin = Math.sin(this.angle);
+                const cHeight = 10 - this.legCompression;
+
+                // Relative foot locations
+                const leftFootX = -19;
+                const leftFootY = cHeight + 2;
+                const rightFootX = 19;
+                const rightFootY = cHeight + 2;
+
+                return {
+                    left: {
+                        x: this.x + (leftFootX * cos - leftFootY * sin),
+                        y: this.y + (leftFootX * sin + leftFootY * cos)
+                    },
+                    right: {
+                        x: this.x + (rightFootX * cos - rightFootY * sin),
+                        y: this.y + (rightFootX * sin + rightFootY * cos)
+                    }
+                };
+            }
+        }
+
+        // --- Exhaust Engine Particle System ---
+        class ExhaustParticle {
+            constructor(x, y, vx, vy) {
+                this.x = x;
+                this.y = y;
+                this.vx = vx;
+                this.vy = vy;
+                this.life = 1.0; // normalised 1.0 -> 0.0
+                this.decay = 1.2 + Math.random() * 1.5;
+                this.color = Math.random() > 0.45 ? '#ffb700' : '#ff3c3c';
+            }
+
+            update(dt) {
+                this.x += this.vx * dt * 15;
+                this.y += this.vy * dt * 15;
+                // Ejected dust suffers lunar gravity
+                this.vy += 0.2 * dt;
+                this.life -= this.decay * dt;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, Math.max(0.5, this.life * 2.5), 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.shadowColor = this.color;
+                ctx.shadowBlur = this.life * 6;
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        // --- Crash Debris Particle Class ---
+        class DebrisShard {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                const angle = Math.random() * Math.PI * 2;
+                const force = 3.0 + Math.random() * 7.0;
+                this.vx = Math.sin(angle) * force;
+                this.vy = -Math.cos(angle) * force - (Math.random() * 3.0); // Bias upwards
+                this.life = 1.0;
+                this.decay = 0.4 + Math.random() * 0.4;
+                this.color = Math.random() > 0.3 ? '#00f0ff' : '#ff3c3c';
+                this.rotSpeed = (Math.random() - 0.5) * 12;
+                this.angle = Math.random() * Math.PI * 2;
+                this.length = 5 + Math.random() * 12;
+            }
+
+            update(dt) {
+                this.x += this.vx * dt * 15;
+                this.y += this.vy * dt * 15;
+                this.vy += 0.45 * dt; // gravity
+                this.angle += this.rotSpeed * dt;
+                this.life -= this.decay * dt;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+                ctx.strokeStyle = this.color;
+                ctx.shadowColor = this.color;
+                ctx.shadowBlur = this.life * 8;
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(-this.length / 2, 0);
+                ctx.lineTo(this.length / 2, 0);
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
+
+        // --- Procedural Moonscape Terrain Engine ---
+        class Terrain {
+            constructor() {
+                this.points = [];
+                this.pads = []; // array of flat pad objects: { startIdx, endIdx, multiplier, color, name }
+            }
+
+            generate(levelValue) {
+                this.points = [];
+                this.pads = [];
+
+                const width = canvas.width;
+                const height = canvas.height;
+                
+                // Procedural parameters: mountains get more complex and taller as levels increase
+                const pointsCount = 28;
+                const segmentWidth = width / (pointsCount - 1);
+                
+                // Base profile generation with midpoint displacement layout
+                const yBase = height - 100;
+                
+                for (let i = 0; i < pointsCount; i++) {
+                    let y = yBase - (Math.sin(i * 0.45) * 60) - (Math.cos(i * 1.1) * 30);
+                    // Add jagged roughness
+                    y += (Math.random() - 0.5) * 45;
+                    // Clip coordinates to valid ranges
+                    y = Math.min(height - 20, Math.max(height - 180, y));
+                    this.points.push({ x: i * segmentWidth, y: y });
+                }
+
+                // Inject 3 dynamic flat Landing Pads (Wider Sizes)
+                // Pad 1: Normal Pad (Wide, Green, 1.5x)
+                this.createPad(3, 7, 1.5, '#39ff14', 'SEC-ALPHA');
+
+                // Pad 2: Advance Pad (Medium, Orange, 3x)
+                const startIdx2 = 11 + Math.floor(Math.random() * 2);
+                this.createPad(startIdx2, startIdx2 + 3, 3.0, '#ffb700', 'CRATER-GRID');
+
+                // Pad 3: Extreme Pad (Narrow, Hot Pink, 5x or 10x depending on level)
+                const startIdx3 = 19 + Math.floor(Math.random() * 2);
+                const mult = levelValue >= 3 ? 10.0 : 5.0;
+                const col = mult === 10.0 ? '#ff007f' : '#00f0ff';
+                this.createPad(startIdx3, startIdx3 + 2, mult, col, 'APEX-PINNACLE');
+
+                // Ensure boundary points remain correct
+                this.points[0].x = 0;
+                this.points[pointsCount - 1].x = width;
+            }
+
+            createPad(startIdx, endIdx, multiplier, color, name) {
+                // Flatten the terrain heights between these segments to form a landing pad
+                const heightVal = this.points[startIdx].y;
+                for (let idx = startIdx; idx <= endIdx; idx++) {
+                    this.points[idx].y = heightVal;
+                }
+                this.pads.push({
+                    startIdx,
+                    endIdx,
+                    multiplier,
+                    color,
+                    name,
+                    startX: this.points[startIdx].x,
+                    endX: this.points[endIdx].x,
+                    y: heightVal
+                });
+            }
+
+            draw() {
+                // Setup terrain drawing styles
+                ctx.save();
+                ctx.lineWidth = 2.0;
+                ctx.strokeStyle = '#e2e8f0';
+                ctx.shadowColor = '#e2e8f0';
+                ctx.shadowBlur = 4;
+
+                // Draw mountains outline
+                ctx.beginPath();
+                ctx.moveTo(this.points[0].x, this.points[0].y);
+                for (let i = 1; i < this.points.length; i++) {
+                    ctx.lineTo(this.points[i].x, this.points[i].y);
+                }
+                ctx.stroke();
+
+                // Draw glowing landing pads explicitly
+                this.pads.forEach(pad => {
+                    ctx.strokeStyle = pad.color;
+                    ctx.shadowColor = pad.color;
+                    ctx.shadowBlur = GLOW_SHADOW_BLUR;
+                    ctx.lineWidth = 4.0;
+
+                    ctx.beginPath();
+                    ctx.moveTo(pad.startX, pad.y);
+                    ctx.lineTo(pad.endX, pad.y);
+                    ctx.stroke();
+
+                    // Draw multiplier sign underneath
+                    ctx.fillStyle = pad.color;
+                    ctx.shadowBlur = 0;
+                    ctx.font = "bold 9px 'Share Tech Mono'";
+                    ctx.fillText(`${pad.multiplier}x`, pad.startX + (pad.endX - pad.startX) / 2 - 8, pad.y - 12);
+                    ctx.fillText(pad.name, pad.startX + (pad.endX - pad.startX) / 2 - 25, pad.y + 16);
+                });
+
+                ctx.restore();
+            }
+
+            // Raycasts/interpolates vertical height at a specific horizontal coordinate
+            getHeightAt(x) {
+                if (x < 0) x = 0;
+                if (x > canvas.width) x = canvas.width;
+
+                // Find containing segment
+                for (let i = 0; i < this.points.length - 1; i++) {
+                    const p1 = this.points[i];
+                    const p2 = this.points[i+1];
+                    if (x >= p1.x && x <= p2.x) {
+                        const ratio = (x - p1.x) / (p2.x - p1.x);
+                        return p1.y + ratio * (p2.y - p1.y);
+                    }
+                }
+                return canvas.height;
+            }
+
+            // Checks whether an coordinate lies directly inside any flat landing pad limits
+            checkOnPad(x) {
+                for (const pad of this.pads) {
+                    if (x >= pad.startX && x <= pad.endX) {
+                        return pad;
+                    }
+                }
+                return null;
+            }
+        }
+
+        // Camera controller for dynamic vector display zooming
+        const camera = {
+            x: 340,
+            y: 260,
+            targetScale: 1.0,
+            currentScale: 1.0,
+            targetX: 340,
+            targetY: 260,
+            currentX: 340,
+            currentY: 260,
+
+            update(dt, landerX, landerY, altitude) {
+                if (gameState === STATES.START) {
+                    this.targetScale = 1.0;
+                    this.targetX = 340;
+                    this.targetY = 260;
+                    this.currentScale = 1.0;
+                    this.currentX = 340;
+                    this.currentY = 260;
+                    return;
+                }
+
+                let nearestPad = null;
+                let minDist = 999999;
+
+                terrain.pads.forEach(pad => {
+                    const padCenterX = pad.startX + (pad.endX - pad.startX) / 2;
+                    const dist = Math.abs(landerX - padCenterX);
+                    if (dist < minDist) {
+                        minDist = dist;
+                        nearestPad = pad;
+                    }
+                });
+
+                const padCenterX = nearestPad ? (nearestPad.startX + (nearestPad.endX - nearestPad.startX) / 2) : 340;
+                const padCenterY = nearestPad ? nearestPad.y : 260;
+                const isCloseToPad = nearestPad && Math.abs(landerX - padCenterX) < 180;
+                
+                if (isCloseToPad && altitude < 150 && gameState !== STATES.CRASHED) {
+                    const t = Math.max(0, Math.min(1, (150 - altitude) / 140));
+                    this.targetScale = 1.0 + t * 1.2;
+                    
+                    this.targetX = landerX * 0.5 + padCenterX * 0.5;
+                    this.targetY = landerY * 0.5 + padCenterY * 0.5;
+                } else {
+                    this.targetScale = 1.0;
+                    this.targetX = 340;
+                    this.targetY = 260;
+                }
+
+                if (Math.abs(this.targetX - this.currentX) > canvas.width / 2) {
+                    this.currentX = this.targetX;
+                }
+                if (Math.abs(this.targetY - this.currentY) > canvas.height / 2) {
+                    this.currentY = this.targetY;
+                }
+
+                const lerpSpeed = 3.5;
+                this.currentScale += (this.targetScale - this.currentScale) * lerpSpeed * dt;
+                this.currentX += (this.targetX - this.currentX) * lerpSpeed * dt;
+                this.currentY += (this.targetY - this.currentY) * lerpSpeed * dt;
+            },
+
+            apply(ctx) {
+                const cx = canvas.width / 2;
+                const cy = canvas.height / 2;
+                ctx.translate(cx, cy);
+                ctx.scale(this.currentScale, this.currentScale);
+                ctx.translate(-this.currentX, -this.currentY);
+            }
+        };
+
+        // Global instances
+        const lander = new Lander();
+        const terrain = new Terrain();
+        let particles = [];
+        let debris = [];
+
+        // Game telemetry logging system
+        const telemetryLogs = document.getElementById('telemetry-logs');
+        function addLog(msg, type = '') {
+            const time = flightTime.toFixed(1);
+            const logItem = document.createElement('div');
+            logItem.className = `log-item ${type}`;
+            logItem.innerHTML = `<span>${msg}</span><span>${time}s</span>`;
+            telemetryLogs.prepend(logItem);
+            
+            // prune old logs
+            while (telemetryLogs.children.length > 20) {
+                telemetryLogs.removeChild(telemetryLogs.lastChild);
+            }
+        }
+
+        // --- Screen overlays toggle UI updates ---
+        function showScreen(screenId) {
+            document.getElementById('screen-start').classList.add('hidden');
+            document.getElementById('screen-landed').classList.add('hidden');
+            document.getElementById('screen-crashed').classList.add('hidden');
+            
+            if (screenId) {
+                document.getElementById(screenId).classList.remove('hidden');
+            }
+        }
+
+        // Setup Event Listeners
+        window.addEventListener('keydown', e => {
+            const key = e.key.toLowerCase();
+            if (key === 'arrowup' || key === 'w') { keys.ArrowUp = keys.w = true; }
+            if (key === 'arrowleft' || key === 'a') { keys.ArrowLeft = keys.a = true; }
+            if (key === 'arrowright' || key === 'd') { keys.ArrowRight = keys.d = true; }
+
+            // Spacebar/Enter key acts as primary arcade buttons to start/restart
+            if ((e.key === ' ' || e.key === 'Enter') && gameState !== STATES.PLAYING) {
+                e.preventDefault();
+                triggerNextStateAction();
+            }
+        });
+
+        window.addEventListener('keyup', e => {
+            const key = e.key.toLowerCase();
+            if (key === 'arrowup' || key === 'w') { keys.ArrowUp = keys.w = false; }
+            if (key === 'arrowleft' || key === 'a') { keys.ArrowLeft = keys.a = false; }
+            if (key === 'arrowright' || key === 'd') { keys.ArrowRight = keys.d = false; }
+        });
+
+        function triggerNextStateAction() {
+            if (gameState === STATES.START) {
+                audio.init();
+                startGame();
+            } else if (gameState === STATES.LANDED) {
+                nextLevel();
+            } else if (gameState === STATES.CRASHED) {
+                resetLevel();
+            }
+        }
+
+        document.getElementById('btn-start').addEventListener('click', () => {
+            audio.init();
+            startGame();
+        });
+
+        document.getElementById('btn-next-level').addEventListener('click', nextLevel);
+        document.getElementById('btn-retry').addEventListener('click', resetLevel);
+        
+        document.getElementById('audio-toggle-btn').addEventListener('click', () => {
+            audio.init();
+            const isMuted = audio.toggleMute();
+            document.getElementById('audio-status-icon').innerText = isMuted ? '🔇 MUTED' : '🔊 ON';
+        });
+
+        function startGame() {
+            score = 0;
+            level = 1;
+            document.getElementById('score-val').innerText = '00000';
+            resetLevel();
+        }
+
+        function resetLevel() {
+            lander.reset();
+            terrain.generate(level);
+            particles = [];
+            debris = [];
+            flightTime = 0.0;
+            gameState = STATES.PLAYING;
+            showScreen(null);
+            addLog(`Level ${level} deployment: ready`, 'success');
+        }
+
+        function nextLevel() {
+            level++;
+            resetLevel();
+        }
+
+        // Trigger crash sequencing
+        function triggerCrash(reasonDesc, velValue) {
+            gameState = STATES.CRASHED;
+            audio.playExplosion();
+            screenShake = 22; // triggers high shake
+
+            // Spawn shards
+            for (let i = 0; i < 40; i++) {
+                debris.push(new DebrisShard(lander.x, lander.y));
+            }
+
+            // Fill overlay texts
+            document.getElementById('crash-title').innerText = reasonDesc.toUpperCase();
+            document.getElementById('crash-desc').innerHTML = `
+                Impact V. Speed: ${velValue.toFixed(1)} m/s (MAX LIMIT: 1.6 m/s)<br>
+                Sub-terrain wreckage detected.<br>
+                Press <span class="kbd-key">SPACEBAR</span> to Redeploy.
+            `;
+            showScreen('screen-crashed');
+            addLog(`CRASH: ${reasonDesc}`, 'failed');
+        }
+
+        // Trigger safe landing sequence
+        function triggerLanding(pad) {
+            gameState = STATES.LANDED;
+            audio.playLandingTune();
+
+            // Squeeze legs visual animation
+            lander.legCompression = 3.5;
+
+            // Calculate landing score reward points
+            const basePoints = 200;
+            const padBonus = pad.multiplier;
+            const fuelBonus = Math.floor(lander.fuel * 0.4);
+            const levelBonus = level * 100;
+            const scoreGained = Math.floor((basePoints + fuelBonus + levelBonus) * padBonus);
+            
+            score += scoreGained;
+            if (score > highScore) {
+                highScore = score;
+                document.getElementById('hiscore-val').innerText = String(highScore).padStart(5, '0');
+            }
+
+            document.getElementById('score-val').innerText = String(score).padStart(5, '0');
+
+            // Render stats overlay screen text details
+            document.getElementById('landed-title').innerText = padBonus >= 5 ? `LEGENDARY SOFT DOWN: ${pad.name}` : "TOUCHDOWN SUCCESSFUL!";
+            document.getElementById('landed-desc').innerHTML = `
+                V. Speed: ${lander.vy.toFixed(1)} m/s (SAFE)<br>
+                Fuel remaining: ${Math.floor(lander.fuel / 10)}% (+${fuelBonus} pts)<br>
+                Pad Multiplier: ${padBonus}x<br>
+                Total Level Reward: +${scoreGained} points!<br>
+                Press <span class="kbd-key">SPACEBAR</span> for Next Descent.
+            `;
+            showScreen('screen-landed');
+            addLog(`LANDED safely on ${pad.name} (+${scoreGained} pts)`, 'success');
+        }
+
+        // Render CRT vector flight statistics UI
+        function updateHUD(dt) {
+            // Speed indicator meters updates
+            const vvel = lander.vy;
+            const hvel = lander.vx;
+            const altitude = Math.max(0, Math.floor(terrain.getHeightAt(lander.x) - lander.y - 12));
+            const pitch = Math.abs(Math.round(lander.angle * (180 / Math.PI)));
+
+            const hudVvel = document.getElementById('hud-vvel');
+            const hudHvel = document.getElementById('hud-hvel');
+            const hudAlt = document.getElementById('hud-alt');
+            const hudPitch = document.getElementById('hud-pitch');
+
+            // Convert velocity text values
+            hudVvel.innerText = `${vvel >= 0 ? '+' : ''}${vvel.toFixed(1)} m/s`;
+            hudHvel.innerText = `${Math.abs(hvel).toFixed(1)} m/s`;
+            hudAlt.innerText = `${altitude} m`;
+            hudPitch.innerText = `${pitch}°`;
+
+            // Style speed values dynamically red if dangerously high
+            if (Math.abs(vvel) >= 1.6) {
+                hudVvel.className = 'value color-red';
+            } else {
+                hudVvel.className = 'value color-green';
+            }
+
+            if (Math.abs(hvel) >= 1.0) {
+                hudHvel.className = 'value color-red';
+            } else {
+                hudHvel.className = 'value color-green';
+            }
+
+            if (pitch >= 8) {
+                hudPitch.className = 'value color-red';
+            } else {
+                hudPitch.className = 'value color-green';
+            }
+
+            // Audio hazard alarms conditions
+            if (gameState === STATES.PLAYING) {
+                flightTime += dt;
+                
+                // If heading downward extremely fast and low altitude, signal rapid emergency beeping
+                if (vvel >= 1.7 && altitude < 150) {
+                    audio.startAlarm(true);
+                } else if (lander.fuel < 200 && lander.fuel > 0) {
+                    // Low fuel signal
+                    audio.startAlarm(false);
+                } else {
+                    audio.stopAlarm();
+                }
+            } else {
+                audio.stopAlarm();
+            }
+
+            // Fuel UI Bar rendering updates
+            const fuelPct = Math.max(0, (lander.fuel / lander.maxFuel) * 100);
+            const fuelBar = document.getElementById('hud-fuel-bar');
+            fuelBar.style.width = `${fuelPct}%`;
+            document.getElementById('hud-fuel-pct').innerText = `FUEL STORES: ${Math.floor(fuelPct)}%`;
+
+            if (fuelPct < 20) {
+                fuelBar.className = 'fuel-meter-bar low';
+            } else {
+                fuelBar.className = 'fuel-meter-bar';
+            }
+        }
+
+        // --- Core Render Loop ---
+        let lastTime = performance.now();
+
+        function gameLoop() {
+            const now = performance.now();
+            let dt = (now - lastTime) / 1000;
+            lastTime = now;
+
+            // Cap elapsed delta-time to avoid glitches on background tab pauses
+            if (dt > 0.1) dt = 0.1;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Update camera zoom dynamics
+            const altitude = Math.max(0, Math.floor(terrain.getHeightAt(lander.x) - lander.y - 12));
+            camera.update(dt, lander.x, lander.y, altitude);
+
+            // Dynamic camera CRT screen shake calculation
+            ctx.save();
+            if (screenShake > 0) {
+                const dx = (Math.random() - 0.5) * screenShake * 0.95;
+                const dy = (Math.random() - 0.5) * screenShake * 0.95;
+                ctx.translate(dx, dy);
+                screenShake = Math.max(0, screenShake - dt * 40);
+            }
+
+            // Apply camera zoom/focus translation
+            camera.apply(ctx);
+
+            // Update Lander physics
+            lander.update(dt);
+
+            // Vector Graphics Grid background (subtle CRT neon aesthetics)
+            drawGrid();
+
+            // Draw Terrain Mountains & Landing Pads
+            terrain.draw();
+
+            // Draw Exhaust Particles
+            particles = particles.filter(p => {
+                p.update(dt);
+                p.draw();
+                return p.life > 0;
+            });
+
+            // Draw Crash Debris Shards
+            debris = debris.filter(d => {
+                d.update(dt);
+                d.draw();
+                return d.life > 0;
+            });
+
+            // Draw and test craft collisions
+            if (gameState === STATES.PLAYING) {
+                lander.draw();
+                testCollisions();
+            } else if (gameState === STATES.LANDED) {
+                lander.draw();
+            }
+
+            ctx.restore();
+
+            // Update flight panels HUD info
+            updateHUD(dt);
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function drawGrid() {
+            ctx.save();
+            ctx.strokeStyle = 'rgba(0, 240, 255, 0.025)';
+            ctx.shadowBlur = 0;
+            ctx.lineWidth = 1;
+            const gridSpacing = 40;
+            
+            // vertical grid lines
+            for (let x = 0; x < canvas.width; x += gridSpacing) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            // horizontal grid lines
+            for (let y = 0; y < canvas.height; y += gridSpacing) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        // Craft Terrain Collision Test logic
+        function testCollisions() {
+            // Check lander critical leg coordinates relative to generated terrain profile heights
+            const legs = lander.getLegPositions();
+            
+            const leftTerrY = terrain.getHeightAt(legs.left.x);
+            const rightTerrY = terrain.getHeightAt(legs.right.x);
+            const centerTerrY = terrain.getHeightAt(lander.x);
+
+            // Test if either foot or ship bottom intersects moon surface
+            const leftCol = legs.left.y >= leftTerrY;
+            const rightCol = legs.right.y >= rightTerrY;
+            const centerCol = (lander.y + 6) >= centerTerrY;
+
+            if (leftCol || rightCol || centerCol) {
+                // Intersected terrain! Let's check landing validity
+                // Leg 1: Check if landed upright on an official landing pad
+                const padLeft = terrain.checkOnPad(legs.left.x);
+                const padRight = terrain.checkOnPad(legs.right.x);
+
+                // Both landing pads must be identical to be considered fully positioned inside flat zone
+                if (padLeft && padRight && padLeft === padRight) {
+                    const pitchAngleDeg = Math.abs(lander.angle * (180 / Math.PI));
+                    
+                    // Safety check conditions
+                    const isUpright = pitchAngleDeg <= 8.0;
+                    const isVSpeedSafe = lander.vy <= 1.6;
+                    const isHSpeedSafe = Math.abs(lander.vx) <= 1.0;
+
+                    if (isUpright && isVSpeedSafe && isHSpeedSafe) {
+                        // Snap lander flush to flat pad surface height
+                        lander.y = padLeft.y - 12;
+                        lander.angle = 0;
+                        lander.vx = 0;
+                        lander.vy = 0;
+                        triggerLanding(padLeft);
+                    } else {
+                        // Unsafe velocity / tilt crash
+                        let crashReason = "Rough Landing Impact";
+                        if (!isUpright) crashReason = "Lander Tilted on Pad";
+                        else if (!isVSpeedSafe) crashReason = "Excessive Vertical Speed";
+                        else if (!isHSpeedSafe) crashReason = "Excessive Slide / Drifting";
+                        
+                        triggerCrash(crashReason, Math.max(Math.abs(lander.vx), lander.vy));
+                    }
+                } else {
+                    // Collision occurred outside flat zones (rugged mountain crags impact)
+                    triggerCrash("Collided with Jagged Crags", Math.max(Math.abs(lander.vx), lander.vy));
+                }
+            }
+        }
+
+        // Initialize display environment setup
+        terrain.generate(1);
+        
+        // Boot graphics animator frame ticks
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+</html>
