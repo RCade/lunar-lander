@@ -106,6 +106,7 @@ export default function App() {
   const [glowActive, setGlowActive] = useState(false);
   const [antialiasActive, setAntialiasActive] = useState(false);
   const [splitViewActive, setSplitViewActive] = useState(false);
+  const [hiddenLineActive, setHiddenLineActive] = useState(true);
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(2500);
   const [isMuted, setIsMuted] = useState(false);
@@ -241,6 +242,13 @@ export default function App() {
         setSplitViewActive(prev => {
           const next = !prev;
           addLog(`Viewport Layout ${next ? '3-WAY SPLIT' : 'SINGLE VIEW'}`);
+          return next;
+        });
+      }
+      if (e.code === 'KeyH') {
+        setHiddenLineActive(prev => {
+          const next = !prev;
+          addLog(`Hidden Line Occlusion ${next ? 'ONLINE' : 'OFFLINE'}`);
           return next;
         });
       }
@@ -391,6 +399,20 @@ export default function App() {
               {splitViewActive ? '3-WAY' : 'SINGLE'} [V]
             </span>
           </div>
+          <div 
+            className="key-row" 
+            style={{ cursor: 'pointer', marginTop: '6px' }}
+            onClick={() => setHiddenLineActive(p => {
+              const next = !p;
+              addLog(`Hidden Line Occlusion ${next ? 'ONLINE' : 'OFFLINE'}`);
+              return next;
+            })}
+          >
+            <span>Hidden Line</span>
+            <span className={hiddenLineActive ? 'color-green' : 'color-red'} style={{ fontWeight: 'bold' }}>
+              {hiddenLineActive ? 'ONLINE' : 'OFFLINE'} [H]
+            </span>
+          </div>
         </div>
 
         {/* Sound toggle panel */}
@@ -433,7 +455,7 @@ export default function App() {
               <ambientLight intensity={0.15} />
 
               {/* Procedural 3D Terrain */}
-              <Terrain glowActive={glowActive} />
+              <Terrain glowActive={glowActive} hiddenLineActive={hiddenLineActive} />
 
               {/* 3D Lander */}
               <Lander
@@ -442,6 +464,7 @@ export default function App() {
                 inputRef={inputs}
                 telemetryRef={telemetryRef}
                 glowActive={glowActive}
+                hiddenLineActive={hiddenLineActive}
               />
 
               {/* Space particle field */}

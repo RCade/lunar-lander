@@ -18,7 +18,7 @@ const I_XX = 1200;           // kg*m^2
 const I_YY = 900;
 const I_ZZ = 1200;
 
-export function Lander({ gameState, setGameState, inputRef, telemetryRef, cameraRef, glowActive }) {
+export function Lander({ gameState, setGameState, inputRef, telemetryRef, cameraRef, glowActive, hiddenLineActive }) {
   const landerRef = useRef();
   const visualGroupRef = useRef();
 
@@ -271,7 +271,7 @@ export function Lander({ gameState, setGameState, inputRef, telemetryRef, camera
         {/* 3D Wireframe Lander Geometry */}
         
         {/* Lander Core Chassis (Octagonal cylinder shape) */}
-        <mesh position={[0, 0, 0]}>
+        <mesh position={[0, 0, 0]} visible={hiddenLineActive}>
           <cylinderGeometry args={[2.5, 3.5, 2.0, 8]} />
           <meshBasicMaterial 
             color="#020204"
@@ -292,7 +292,7 @@ export function Lander({ gameState, setGameState, inputRef, telemetryRef, camera
         </mesh>
   
         {/* Lander Cockpit Sphere Dome */}
-        <mesh position={[0, 1.2, 0]}>
+        <mesh position={[0, 1.2, 0]} visible={hiddenLineActive}>
           <sphereGeometry args={[2.2, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2]} />
           <meshBasicMaterial 
             color="#020204"
@@ -335,7 +335,7 @@ export function Lander({ gameState, setGameState, inputRef, telemetryRef, camera
               </line>
               
               {/* Footpad */}
-              <mesh position={[1.5, -0.6, 0]} rotation={[0, 0, 0]}>
+              <mesh position={[1.5, -0.6, 0]} rotation={[0, 0, 0]} visible={hiddenLineActive}>
                 <cylinderGeometry args={[0.6, 0.6, 0.15, 6]} />
                 <meshBasicMaterial 
                   color="#020204"
@@ -359,7 +359,7 @@ export function Lander({ gameState, setGameState, inputRef, telemetryRef, camera
         })}
   
         {/* Main Engine Nozzle */}
-        <mesh position={[0, -1.2, 0]}>
+        <mesh position={[0, -1.2, 0]} visible={hiddenLineActive}>
           <cylinderGeometry args={[0.3, 0.8, 0.6, 6]} />
           <meshBasicMaterial 
             color="#020204"

@@ -59,7 +59,7 @@ export const LANDING_PADS = [
   { x: -120, z: 100, y: 12, radius: 8, multiplier: 4, color: '#ff007f', label: 'HARD' },
 ];
 
-export function Terrain({ glowActive }) {
+export function Terrain({ glowActive, hiddenLineActive }) {
   const noiseGen = useMemo(() => new SimpleNoise(0.85), []);
 
   const [terrainGeometry, solidGeometry, padsGrid] = useMemo(() => {
@@ -144,7 +144,7 @@ export function Terrain({ glowActive }) {
   return (
     <group>
       {/* Solid Terrain Backface Blocker */}
-      <mesh geometry={solidGeometry}>
+      <mesh geometry={solidGeometry} visible={hiddenLineActive}>
         <meshBasicMaterial 
           color="#020204" 
           depthWrite={true} 
