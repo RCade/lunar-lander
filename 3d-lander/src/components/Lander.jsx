@@ -33,6 +33,14 @@ export function Lander({ gameState, setGameState, inputRef, telemetryRef, camera
     sasActive: true,
   });
 
+  const flameBlobs = useRef([
+    { y: 0, xOff: 0.1, zOff: -0.05, speed: 6.0, scale: 1.0 },
+    { y: -0.6, xOff: -0.1, zOff: 0.1, speed: 7.2, scale: 0.8 },
+    { y: -1.2, xOff: 0.05, zOff: -0.1, speed: 5.5, scale: 0.6 },
+    { y: -1.8, xOff: -0.05, zOff: 0.05, speed: 6.8, scale: 0.4 },
+    { y: -2.4, xOff: 0.0, zOff: 0.0, speed: 8.0, scale: 0.2 },
+  ]);
+
   // Re-initialization when resetting levels
   useEffect(() => {
     if (gameState === 'playing') {
@@ -244,6 +252,18 @@ export function Lander({ gameState, setGameState, inputRef, telemetryRef, camera
       }
     }
 
+    // --- PROCEDURAL FLAME BLOB UPDATES ---
+    if (gameState === 'playing' && throttle > 0.05) {
+      flameBlobs.current.forEach(blob => {
+        blob.y -= dt * blob.speed * (0.5 + 0.5 * throttle);
+        if (blob.y < -3.0) {
+          blob.y = 0;
+          blob.xOff = (Math.random() - 0.5) * 0.3;
+          blob.zOff = (Math.random() - 0.5) * 0.3;
+        }
+      });
+    }
+
     // --- WRITE TELEMETRY REF FOR HUD ---
     const tilt = Math.acos(THREE.MathUtils.clamp(localUp.dot(new THREE.Vector3(0, 1, 0)), -1, 1)) * (180 / Math.PI);
     telemetryRef.current = {
@@ -291,9 +311,9 @@ export function Lander({ gameState, setGameState, inputRef, telemetryRef, camera
           />
         </mesh>
   
-        {/* Lander Cockpit Sphere Dome */}
+        {/* Lander Cockpit Dodecahedron Dome */}
         <mesh position={[0, 1.2, 0]} visible={hiddenLineActive}>
-          <sphereGeometry args={[2.2, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2]} />
+          <dodecahedronGeometry args={[2.2, 0]} />
           <meshBasicMaterial 
             color="#020204"
             depthWrite={true}
@@ -304,7 +324,7 @@ export function Lander({ gameState, setGameState, inputRef, telemetryRef, camera
           />
         </mesh>
         <mesh position={[0, 1.2, 0]}>
-          <sphereGeometry args={[2.2, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2]} />
+          <dodecahedronGeometry args={[2.2, 0]} />
           <meshBasicMaterial 
             color={glowActive ? new THREE.Color("#00ffb7").multiplyScalar(2.0) : "#00ffb7"} 
             toneMapped={false}
@@ -379,16 +399,43 @@ export function Lander({ gameState, setGameState, inputRef, telemetryRef, camera
           />
         </mesh>
   
-        {/* Main engine thruster fire (vector lines) */}
+        {/* Procedural engine thruster fire (metaball-like dynamic wireframe blobs) */}
         {gameState === 'playing' && inputRef.current.throttle > 0.05 && (
-          <mesh position={[0, -2.0, 0]} scale={[1, inputRef.current.throttle * 2.5, 1]}>
-            <coneGeometry args={[0.6, 1.2, 6, 1, true]} />
-            <meshBasicMaterial 
-              color={glowActive ? new THREE.Color("#ff5100").multiplyScalar(3.0) : "#ff5100"} 
-              toneMapped={false}
-              wireframe={true} 
-            />
-          </mesh>
+          <group>
+            {flameBlobs.current.map((blob, index) => {
+              const currentY = blob.y;
+              const progress = Math.min(Math.max(-currentY / 3.0, 0), 1);
+              const scaleFactor = (1.0 - progress) * blob.scale * (0.4 + 0.6 * inputRef.current.throttle);
+              
+              if (scaleFactor <= 0.01) return null;
+
+              return (
+                <group key={index} position={[blob.xOff, -1.5 + currentY, blob.zOff]}>
+                  {/* Solid background mesh to occlude terrain/lander legs */}
+                  <mesh visible={hiddenLineActive}>
+                    <icosahedronGeometry args={[0.6 * scaleFactor, 0]} />
+                    <meshBasicMaterial 
+                      color="#020204"
+                      depthWrite={true}
+                      toneMapped={false}
+                      polygonOffset={true}
+                      polygonOffsetFactor={1.0}
+                      polygonOffsetUnits={1.0}
+                    />
+                  </mesh>
+                  {/* Wireframe glowing flame mesh */}
+                  <mesh>
+                    <icosahedronGeometry args={[0.6 * scaleFactor, 0]} />
+                    <meshBasicMaterial 
+                      color={glowActive ? new THREE.Color("#ff5100").multiplyScalar(3.0) : "#ff5100"} 
+                      toneMapped={false}
+                      wireframe={true} 
+                    />
+                  </mesh>
+                </group>
+              );
+            })}
+          </group>
         )}
   
         {/* RCS Jets HUD Visualizer (lines shooting out) */}
