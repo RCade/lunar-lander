@@ -21,6 +21,13 @@ const I_ZZ = 1200;
 export function Lander({ gameState, setGameState, inputRef, telemetryRef, cameraRef, glowActive, hiddenLineActive }) {
   const landerRef = useRef();
   const visualGroupRef = useRef();
+  const flameGroupRef = useRef();
+  const blobRefs = useRef([]);
+  if (blobRefs.current.length === 0) {
+    for (let i = 0; i < 8; i++) {
+      blobRefs.current.push(React.createRef());
+    }
+  }
 
   // Physics state refs to avoid React re-render lags
   const physicsState = useRef({
@@ -256,13 +263,32 @@ export function Lander({ gameState, setGameState, inputRef, telemetryRef, camera
     }
 
     // --- PROCEDURAL FLAME BLOB UPDATES ---
-    if (gameState === 'playing' && throttle > 0.05) {
-      flameBlobs.current.forEach(blob => {
+    const isThrottling = gameState === 'playing' && throttle > 0.05;
+    if (flameGroupRef.current) {
+      flameGroupRef.current.visible = isThrottling;
+    }
+    if (isThrottling) {
+      flameBlobs.current.forEach((blob, index) => {
         blob.y -= dt * blob.speed * (0.5 + 0.5 * throttle);
         if (blob.y < -6.0) {
           blob.y = 0;
           blob.xOff = (Math.random() - 0.5) * 0.5;
           blob.zOff = (Math.random() - 0.5) * 0.5;
+        }
+
+        const ref = blobRefs.current[index]?.current;
+        if (ref) {
+          const currentY = blob.y;
+          const progress = Math.min(Math.max(-currentY / 6.0, 0), 1);
+          const scaleFactor = (1.0 - progress) * blob.scale * (0.3 + 0.7 * throttle);
+          
+          if (scaleFactor <= 0.01) {
+            ref.visible = false;
+          } else {
+            ref.visible = true;
+            ref.position.set(blob.xOff, -1.5 + currentY, blob.zOff);
+            ref.scale.setScalar(scaleFactor);
+          }
         }
       });
     }
@@ -329,7 +355,7 @@ export function Lander({ gameState, setGameState, inputRef, telemetryRef, camera
         <mesh position={[0, 1.2, 0]}>
           <dodecahedronGeometry args={[2.2, 1]} />
           <meshBasicMaterial 
-            color={glowActive ? new THREE.Color("#00ffb7").multiplyScalar(2.0) : "#00ffb7"} 
+            color={glowActive ? new THREE.Color("#ffffff").multiplyScalar(1.8) : "#ffffff"} 
             toneMapped={false}
             wireframe={true} 
           />
@@ -350,7 +376,7 @@ export function Lander({ gameState, setGameState, inputRef, telemetryRef, camera
         <mesh position={[0, 3.2, 0]} rotation={[Math.PI / 2, 0, 0]}>
           <cylinderGeometry args={[0.6, 0.6, 0.4, 6]} />
           <meshBasicMaterial 
-            color={glowActive ? new THREE.Color("#00ffb7").multiplyScalar(2.0) : "#00ffb7"} 
+            color={glowActive ? new THREE.Color("#ffffff").multiplyScalar(1.8) : "#ffffff"} 
             toneMapped={false}
             wireframe={true} 
           />
@@ -372,7 +398,7 @@ export function Lander({ gameState, setGameState, inputRef, telemetryRef, camera
             />
           </bufferGeometry>
           <lineBasicMaterial 
-            color={glowActive ? new THREE.Color("#00ffb7").multiplyScalar(2.0) : "#00ffb7"} 
+            color={glowActive ? new THREE.Color("#ffffff").multiplyScalar(1.8) : "#ffffff"} 
             toneMapped={false}
           />
         </lineSegments>
@@ -445,43 +471,33 @@ export function Lander({ gameState, setGameState, inputRef, telemetryRef, camera
         </mesh>
   
         {/* Procedural engine thruster fire (metaball-like dynamic wireframe blobs) */}
-        {gameState === 'playing' && inputRef.current.throttle > 0.05 && (
-          <group>
-            {flameBlobs.current.map((blob, index) => {
-              const currentY = blob.y;
-              const progress = Math.min(Math.max(-currentY / 6.0, 0), 1);
-              const scaleFactor = (1.0 - progress) * blob.scale * (0.3 + 0.7 * inputRef.current.throttle);
-              
-              if (scaleFactor <= 0.01) return null;
-
-              return (
-                <group key={index} position={[blob.xOff, -1.5 + currentY, blob.zOff]}>
-                  {/* Solid background mesh to occlude terrain/lander legs */}
-                  <mesh visible={hiddenLineActive}>
-                    <icosahedronGeometry args={[0.8 * scaleFactor, 0]} />
-                    <meshBasicMaterial 
-                      color="#020204"
-                      depthWrite={true}
-                      toneMapped={false}
-                      polygonOffset={true}
-                      polygonOffsetFactor={1.0}
-                      polygonOffsetUnits={1.0}
-                    />
-                  </mesh>
-                  {/* Wireframe glowing flame mesh */}
-                  <mesh>
-                    <icosahedronGeometry args={[0.8 * scaleFactor, 0]} />
-                    <meshBasicMaterial 
-                      color={glowActive ? new THREE.Color("#ff5100").multiplyScalar(3.0) : "#ff5100"} 
-                      toneMapped={false}
-                      wireframe={true} 
-                    />
-                  </mesh>
-                </group>
-              );
-            })}
-          </group>
-        )}
+        <group ref={flameGroupRef} visible={false}>
+          {flameBlobs.current.map((blob, index) => (
+            <group key={index} ref={blobRefs.current[index]}>
+              {/* Solid background mesh to occlude terrain/lander legs */}
+              <mesh visible={hiddenLineActive}>
+                <icosahedronGeometry args={[0.8, 0]} />
+                <meshBasicMaterial 
+                  color="#020204"
+                  depthWrite={true}
+                  toneMapped={false}
+                  polygonOffset={true}
+                  polygonOffsetFactor={1.0}
+                  polygonOffsetUnits={1.0}
+                />
+              </mesh>
+              {/* Wireframe glowing flame mesh */}
+              <mesh>
+                <icosahedronGeometry args={[0.8, 0]} />
+                <meshBasicMaterial 
+                  color={glowActive ? new THREE.Color("#ff5100").multiplyScalar(3.0) : "#ff5100"} 
+                  toneMapped={false}
+                  wireframe={true} 
+                />
+              </mesh>
+            </group>
+          ))}
+        </group>
   
         {/* RCS Jets HUD Visualizer (lines shooting out) */}
         {gameState === 'playing' && inputRef.current.yaw !== 0 && (
