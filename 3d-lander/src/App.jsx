@@ -8,6 +8,7 @@ import { Terrain, LANDING_PADS } from './components/Terrain';
 import { Starfield } from './components/Starfield';
 import { Cockpit } from './components/Cockpit';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
+import { ThreeWayViewport } from './components/ThreeWayViewport';
 
 // --- Throttled UI Telemetry Updater ---
 // Read values from ref to keep canvas rendering at full framerate (no react re-render overhead)
@@ -104,6 +105,7 @@ export default function App() {
   const [gameState, setGameState] = useState('menu'); // menu, playing, landed, crashed
   const [glowActive, setGlowActive] = useState(false);
   const [antialiasActive, setAntialiasActive] = useState(false);
+  const [splitViewActive, setSplitViewActive] = useState(false);
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(2500);
   const [isMuted, setIsMuted] = useState(false);
@@ -198,6 +200,13 @@ export default function App() {
         setAntialiasActive(prev => {
           const next = !prev;
           addLog(`Anti-Aliasing ${next ? 'SMOOTH' : 'JAGGED'}`);
+          return next;
+        });
+      }
+      if (e.code === 'KeyV') {
+        setSplitViewActive(prev => {
+          const next = !prev;
+          addLog(`Viewport Layout ${next ? '3-WAY SPLIT' : 'SINGLE VIEW'}`);
           return next;
         });
       }
@@ -334,6 +343,20 @@ export default function App() {
               {antialiasActive ? 'SMOOTH' : 'JAGGED'} [A]
             </span>
           </div>
+          <div 
+            className="key-row" 
+            style={{ cursor: 'pointer', marginTop: '6px' }}
+            onClick={() => setSplitViewActive(p => {
+              const next = !p;
+              addLog(`Viewport Layout ${next ? '3-WAY SPLIT' : 'SINGLE VIEW'}`);
+              return next;
+            })}
+          >
+            <span>Viewport Layout</span>
+            <span className={splitViewActive ? 'color-green' : 'color-red'} style={{ fontWeight: 'bold' }}>
+              {splitViewActive ? '3-WAY' : 'SINGLE'} [V]
+            </span>
+          </div>
         </div>
 
         {/* Sound toggle panel */}
@@ -400,8 +423,13 @@ export default function App() {
               {/* Keep physics frame listener mapping to UI */}
               <TelemetryListener telemetryRef={telemetryRef} setUiTelemetry={setUiTelemetry} />
 
+              {/* Manual Viewport split rendering */}
+              {splitViewActive && (
+                <ThreeWayViewport telemetryRef={telemetryRef} />
+              )}
+
               {/* Glowing Vector Graphics Postprocessing */}
-              {(glowActive || antialiasActive) ? (
+              {(!splitViewActive && (glowActive || antialiasActive)) ? (
                 <EffectComposer multisampling={antialiasActive ? 8 : 0}>
                   {glowActive ? (
                     <Bloom 
@@ -422,6 +450,78 @@ export default function App() {
               ) : null}
             </Suspense>
           </Canvas>
+
+          {/* Viewport split screen borders */}
+          {splitViewActive && (
+            <div className="split-view-borders">
+              <div className="border-horizontal"></div>
+              <div className="border-vertical-1"></div>
+              <div className="border-vertical-2"></div>
+            </div>
+          )}
+
+          {/* Viewport labels */}
+          {splitViewActive && (
+            <div className="viewport-labels">
+              <div className="label-top">[ ACTIVE CAMERA / 3D ]</div>
+              <div className="label-bottom-left">[ FRONT VIEW ]</div>
+              <div className="label-bottom-middle">[ LEFT VIEW ]</div>
+              <div className="label-bottom-right">[ MODULE RADAR ]</div>
+            </div>
+          )}
+
+          {/* Bottom-right Radar Panel */}
+          {splitViewActive && (
+            <div className="radar-panel">
+              <div className="radar-svg-container">
+                <svg viewBox="-50 -50 100 100" className="radar-grid">
+                  <circle cx="0" cy="0" r="15" fill="none" stroke="rgba(255, 183, 0, 0.15)" strokeWidth="1" />
+                  <circle cx="0" cy="0" r="30" fill="none" stroke="rgba(255, 183, 0, 0.25)" strokeWidth="1" />
+                  <circle cx="0" cy="0" r="45" fill="none" stroke="rgba(255, 183, 0, 0.15)" strokeWidth="1" strokeDasharray="2,2" />
+                  <line x1="-50" y1="0" x2="50" y2="0" stroke="rgba(255, 183, 0, 0.2)" strokeWidth="1" />
+                  <line x1="0" y1="-50" x2="0" y2="50" stroke="rgba(255, 183, 0, 0.2)" strokeWidth="1" />
+                  
+                  {LANDING_PADS.map((pad, idx) => {
+                    const dx = pad.x - uiTelemetry.position?.x;
+                    const dz = pad.z - uiTelemetry.position?.z;
+                    const scale = 0.35;
+                    const svgX = dx * scale;
+                    const svgY = dz * scale;
+                    const svgR = pad.radius * scale;
+                    const dist = Math.sqrt(svgX * svgX + svgY * svgY);
+                    
+                    if (dist < 48) {
+                      return (
+                        <g key={idx}>
+                          <circle cx={svgX} cy={svgY} r={svgR} fill="none" stroke={pad.color} strokeWidth="1.5" />
+                          <text x={svgX} y={svgY + 2} fill={pad.color} textAnchor="middle" style={{ fontFamily: "'Share Tech Mono', monospace", fontSize: '4.5px' }}>
+                            {pad.multiplier}x
+                          </text>
+                        </g>
+                      );
+                    }
+                    return null;
+                  })}
+                  
+                  <circle cx="0" cy="0" r="2.5" fill="var(--vector-cyan)" />
+                  <line 
+                    x1="0" 
+                    y1="0" 
+                    x2={uiTelemetry.forwardVector ? -uiTelemetry.forwardVector.x * 6 : 0} 
+                    y2={uiTelemetry.forwardVector ? -uiTelemetry.forwardVector.z * 6 : -6} 
+                    stroke="var(--vector-cyan)" 
+                    strokeWidth="1.5" 
+                  />
+                </svg>
+              </div>
+              <div className="radar-stats">
+                <div>LAT X: <span className="color-cyan">{uiTelemetry.position ? Math.round(uiTelemetry.position.x) : 0} m</span></div>
+                <div>LAT Z: <span className="color-cyan">{uiTelemetry.position ? Math.round(uiTelemetry.position.z) : 0} m</span></div>
+                <div>PITCH: <span className={uiTelemetry.pitch > 8.5 ? 'color-red' : 'color-green'}>{Math.round(uiTelemetry.pitch)}°</span></div>
+                <div>CORE: <span className="color-green">NOMINAL</span></div>
+              </div>
+            </div>
+          )}
 
           {/* CRT screen visual layer effects */}
           <div className="scanlines"></div>
