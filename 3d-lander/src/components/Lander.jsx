@@ -6,12 +6,12 @@ import { getTerrainHeight, terrainNoiseInstance, LANDING_PADS } from './Terrain'
 
 // Lander configuration constants
 const DRY_MASS = 1000;       // kg
-const MAX_FUEL = 800;        // kg
+const MAX_FUEL = 1000;       // kg (increased from 800)
 const MAX_THRUST = 4500;     // N (enough to counter gravity and accelerate)
-const FUEL_BURN_RATE = 150;  // kg/s at full throttle
+const FUEL_BURN_RATE = 15;   // kg/s at full throttle (decreased from 150)
 const RCS_TORQUE = 2500;     // N*m for attitude control
 const RCS_FORCE = 1200;      // N for translation control
-const RCS_BURN_RATE = 15;    // kg/s per active thruster
+const RCS_BURN_RATE = 1.5;   // kg/s per active thruster (decreased from 15)
 
 // Moment of inertia tensor approximation (diagonal elements)
 const I_XX = 1200;           // kg*m^2
