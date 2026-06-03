@@ -34,11 +34,14 @@ export function Lander({ gameState, setGameState, inputRef, telemetryRef, camera
   });
 
   const flameBlobs = useRef([
-    { y: 0, xOff: 0.1, zOff: -0.05, speed: 6.0, scale: 1.0 },
-    { y: -0.6, xOff: -0.1, zOff: 0.1, speed: 7.2, scale: 0.8 },
-    { y: -1.2, xOff: 0.05, zOff: -0.1, speed: 5.5, scale: 0.6 },
-    { y: -1.8, xOff: -0.05, zOff: 0.05, speed: 6.8, scale: 0.4 },
-    { y: -2.4, xOff: 0.0, zOff: 0.0, speed: 8.0, scale: 0.2 },
+    { y: 0, xOff: 0.15, zOff: -0.08, speed: 8.0, scale: 2.0 },
+    { y: -0.7, xOff: -0.15, zOff: 0.15, speed: 9.0, scale: 1.8 },
+    { y: -1.4, xOff: 0.08, zOff: -0.15, speed: 7.5, scale: 1.5 },
+    { y: -2.1, xOff: -0.08, zOff: 0.08, speed: 8.5, scale: 1.2 },
+    { y: -2.8, xOff: 0.12, zOff: -0.12, speed: 7.0, scale: 0.9 },
+    { y: -3.5, xOff: -0.12, zOff: 0.12, speed: 8.0, scale: 0.6 },
+    { y: -4.2, xOff: 0.05, zOff: -0.05, speed: 9.5, scale: 0.4 },
+    { y: -4.9, xOff: 0.0, zOff: 0.0, speed: 10.0, scale: 0.2 },
   ]);
 
   // Re-initialization when resetting levels
@@ -256,10 +259,10 @@ export function Lander({ gameState, setGameState, inputRef, telemetryRef, camera
     if (gameState === 'playing' && throttle > 0.05) {
       flameBlobs.current.forEach(blob => {
         blob.y -= dt * blob.speed * (0.5 + 0.5 * throttle);
-        if (blob.y < -3.0) {
+        if (blob.y < -6.0) {
           blob.y = 0;
-          blob.xOff = (Math.random() - 0.5) * 0.3;
-          blob.zOff = (Math.random() - 0.5) * 0.3;
+          blob.xOff = (Math.random() - 0.5) * 0.5;
+          blob.zOff = (Math.random() - 0.5) * 0.5;
         }
       });
     }
@@ -311,9 +314,9 @@ export function Lander({ gameState, setGameState, inputRef, telemetryRef, camera
           />
         </mesh>
   
-        {/* Lander Cockpit Dodecahedron Dome */}
+        {/* Lander Cockpit Geodesic Dome */}
         <mesh position={[0, 1.2, 0]} visible={hiddenLineActive}>
-          <dodecahedronGeometry args={[2.2, 0]} />
+          <dodecahedronGeometry args={[2.2, 1]} />
           <meshBasicMaterial 
             color="#020204"
             depthWrite={true}
@@ -324,13 +327,55 @@ export function Lander({ gameState, setGameState, inputRef, telemetryRef, camera
           />
         </mesh>
         <mesh position={[0, 1.2, 0]}>
-          <dodecahedronGeometry args={[2.2, 0]} />
+          <dodecahedronGeometry args={[2.2, 1]} />
           <meshBasicMaterial 
             color={glowActive ? new THREE.Color("#00ffb7").multiplyScalar(2.0) : "#00ffb7"} 
             toneMapped={false}
             wireframe={true} 
           />
         </mesh>
+
+        {/* Top Docking / Hatch Ring */}
+        <mesh position={[0, 3.2, 0]} rotation={[Math.PI / 2, 0, 0]} visible={hiddenLineActive}>
+          <cylinderGeometry args={[0.6, 0.6, 0.4, 6]} />
+          <meshBasicMaterial 
+            color="#020204"
+            depthWrite={true}
+            toneMapped={false}
+            polygonOffset={true}
+            polygonOffsetFactor={1}
+            polygonOffsetUnits={1}
+          />
+        </mesh>
+        <mesh position={[0, 3.2, 0]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.6, 0.6, 0.4, 6]} />
+          <meshBasicMaterial 
+            color={glowActive ? new THREE.Color("#00ffb7").multiplyScalar(2.0) : "#00ffb7"} 
+            toneMapped={false}
+            wireframe={true} 
+          />
+        </mesh>
+
+        {/* Sensor Spire & Communications Antenna Array */}
+        <lineSegments>
+          <bufferGeometry>
+            <float32BufferAttribute
+              attach="attributes-position"
+              args={[new Float32Array([
+                // Main antenna spire
+                0, 3.4, 0,  0, 4.6, 0,
+                // Left whisker
+                0, 3.2, 0, -0.5, 3.9, 0,
+                // Right whisker
+                0, 3.2, 0,  0.5, 3.9, 0
+              ]), 3]}
+            />
+          </bufferGeometry>
+          <lineBasicMaterial 
+            color={glowActive ? new THREE.Color("#00ffb7").multiplyScalar(2.0) : "#00ffb7"} 
+            toneMapped={false}
+          />
+        </lineSegments>
   
         {/* Landing Legs / Struts */}
         {/* Four landing struts placed at 45 degree intervals */}
@@ -404,8 +449,8 @@ export function Lander({ gameState, setGameState, inputRef, telemetryRef, camera
           <group>
             {flameBlobs.current.map((blob, index) => {
               const currentY = blob.y;
-              const progress = Math.min(Math.max(-currentY / 3.0, 0), 1);
-              const scaleFactor = (1.0 - progress) * blob.scale * (0.4 + 0.6 * inputRef.current.throttle);
+              const progress = Math.min(Math.max(-currentY / 6.0, 0), 1);
+              const scaleFactor = (1.0 - progress) * blob.scale * (0.3 + 0.7 * inputRef.current.throttle);
               
               if (scaleFactor <= 0.01) return null;
 
@@ -413,7 +458,7 @@ export function Lander({ gameState, setGameState, inputRef, telemetryRef, camera
                 <group key={index} position={[blob.xOff, -1.5 + currentY, blob.zOff]}>
                   {/* Solid background mesh to occlude terrain/lander legs */}
                   <mesh visible={hiddenLineActive}>
-                    <icosahedronGeometry args={[0.6 * scaleFactor, 0]} />
+                    <icosahedronGeometry args={[0.8 * scaleFactor, 0]} />
                     <meshBasicMaterial 
                       color="#020204"
                       depthWrite={true}
@@ -425,7 +470,7 @@ export function Lander({ gameState, setGameState, inputRef, telemetryRef, camera
                   </mesh>
                   {/* Wireframe glowing flame mesh */}
                   <mesh>
-                    <icosahedronGeometry args={[0.6 * scaleFactor, 0]} />
+                    <icosahedronGeometry args={[0.8 * scaleFactor, 0]} />
                     <meshBasicMaterial 
                       color={glowActive ? new THREE.Color("#ff5100").multiplyScalar(3.0) : "#ff5100"} 
                       toneMapped={false}
