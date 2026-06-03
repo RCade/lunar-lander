@@ -172,6 +172,12 @@ export default function App() {
     setLogs((prev) => [{ text, time: `${stamp}s` }, ...prev.slice(0, 7)]);
   };
 
+  // Keep latest updateInputs in a ref to avoid tearing down the animation frame loop on re-renders
+  const updateInputsRef = useRef(updateInputs);
+  useEffect(() => {
+    updateInputsRef.current = updateInputs;
+  }, [updateInputs]);
+
   // Keyboard loop hook for updating analog controls
   useEffect(() => {
     let animId;
@@ -183,7 +189,11 @@ export default function App() {
       frames++;
       const dt = (now - lastT) / 1000;
       lastT = now;
-      updateInputs(dt);
+      
+      // Call inputs update via stable ref
+      if (updateInputsRef.current) {
+        updateInputsRef.current(dt);
+      }
 
       // Update FPS counter every 500ms
       if (now - lastFpsUpdate > 500) {
@@ -208,7 +218,7 @@ export default function App() {
     };
     animId = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(animId);
-  }, [updateInputs]);
+  }, []);
 
   // Listen for render deck toggle shortcut keys
   useEffect(() => {
