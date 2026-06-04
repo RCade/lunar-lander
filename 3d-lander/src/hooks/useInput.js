@@ -10,6 +10,7 @@ export function useInput() {
     translateZ: 0,   // -1 to 1 (longitudinal translation)
     sasActive: true, // SAS is active by default
     cameraMode: 3,   // 3 for 3rd person, 1 for 1st person
+    cameraFocusMode: 0, // 0 = freelook, 1 = Easy pad, 2 = Medium pad, 3 = Hard pad
   });
 
   const keysPressed = useRef({});
@@ -26,6 +27,22 @@ export function useInput() {
       if (e.code === 'KeyC') {
         inputs.current.cameraMode = inputs.current.cameraMode === 3 ? 1 : 3;
         console.log(`Camera Mode: ${inputs.current.cameraMode}rd Person`);
+      }
+      if (e.code === 'Digit1' || e.code === 'Numpad1') {
+        inputs.current.cameraFocusMode = 1;
+        console.log(`Camera Focus Lock: Easy Pad (1X)`);
+      }
+      if (e.code === 'Digit2' || e.code === 'Numpad2') {
+        inputs.current.cameraFocusMode = 2;
+        console.log(`Camera Focus Lock: Medium Pad (2X)`);
+      }
+      if (e.code === 'Digit3' || e.code === 'Numpad3') {
+        inputs.current.cameraFocusMode = 3;
+        console.log(`Camera Focus Lock: Hard Pad (4X)`);
+      }
+      if (e.code === 'Digit0' || e.code === 'Numpad0') {
+        inputs.current.cameraFocusMode = 0;
+        console.log(`Camera Focus Lock: Freelook`);
       }
     };
 

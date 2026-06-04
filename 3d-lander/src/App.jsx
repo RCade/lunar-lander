@@ -42,6 +42,7 @@ function CameraController({ telemetryRef }) {
     const localForward = tel.forwardVector;
     const localRight = tel.rightVector;
     const cameraMode = tel.cameraMode;
+    const cameraFocusMode = tel.cameraFocusMode || 0;
 
     const dt = Math.min(delta, 0.03); // clamp time step to prevent physics explosion
     if (state.clock.getElapsedTime() % 1 < 0.05) { // Log once every second
@@ -52,7 +53,8 @@ function CameraController({ telemetryRef }) {
         up: [up.x, up.y, up.z],
         velCamera: [velCamera.current.x, velCamera.current.y, velCamera.current.z],
         isFirstFrame: isFirstFrame.current,
-        cameraMode: cameraMode
+        cameraMode: cameraMode,
+        cameraFocusMode: cameraFocusMode
       }));
     }
 
@@ -81,8 +83,15 @@ function CameraController({ telemetryRef }) {
       velCamera.current.addScaledVector(force, dt);
       camera.position.addScaledVector(velCamera.current, dt);
 
-      // Target lookat is slightly in front of the lander to anticipate movement
-      const lookAtTarget = landerPos.clone().addScaledVector(localForward, 3.0);
+      // Target lookat is slightly in front of the lander to anticipate movement, or midpoint to pad
+      let lookAtTarget;
+      if (cameraFocusMode >= 1 && cameraFocusMode <= 3) {
+        const pad = LANDING_PADS[cameraFocusMode - 1];
+        const padPos = new THREE.Vector3(pad.x, pad.y, pad.z);
+        lookAtTarget = new THREE.Vector3().addVectors(landerPos, padPos).multiplyScalar(0.5);
+      } else {
+        lookAtTarget = landerPos.clone().addScaledVector(localForward, 3.0);
+      }
       camera.lookAt(lookAtTarget);
     } else {
       // --- 1st-Person Cockpit Camera ---
@@ -90,9 +99,15 @@ function CameraController({ telemetryRef }) {
       const cockpitOffset = up.clone().multiplyScalar(1.2); // pilot eye height
       camera.position.copy(landerPos).add(cockpitOffset);
 
-      // Look straight forward relative to lander attitude
-      const lookTarget = camera.position.clone().add(localForward.clone().multiplyScalar(10));
-      camera.lookAt(lookTarget);
+      // Look directly at pad if lock is active, otherwise straight forward
+      if (cameraFocusMode >= 1 && cameraFocusMode <= 3) {
+        const pad = LANDING_PADS[cameraFocusMode - 1];
+        const padPos = new THREE.Vector3(pad.x, pad.y, pad.z);
+        camera.lookAt(padPos);
+      } else {
+        const lookTarget = camera.position.clone().add(localForward.clone().multiplyScalar(10));
+        camera.lookAt(lookTarget);
+      }
 
       // Reset chase spring states
       velCamera.current.set(0, 0, 0);
@@ -206,6 +221,7 @@ export default function App() {
     pitch: 0,
     sasActive: true,
     cameraMode: 3,
+    cameraFocusMode: 0,
   });
 
   // Local state copy for React UI rendering
@@ -217,6 +233,7 @@ export default function App() {
     pitch: 0,
     sasActive: true,
     cameraMode: 3,
+    cameraFocusMode: 0,
   });
 
   const startTime = useRef(0);
@@ -412,6 +429,14 @@ export default function App() {
           <div className="key-row" style={{ marginTop: '6px' }}>
             <span>Active Camera</span>
             <span className="kbd-key">{uiTelemetry.cameraMode === 3 ? 'CHASE' : 'COCKPIT'} [C]</span>
+          </div>
+          <div className="key-row" style={{ marginTop: '6px' }}>
+            <span>Focus Lock</span>
+            <span className="kbd-key">
+              {uiTelemetry.cameraFocusMode === 0 ? 'FREELOOK' :
+               uiTelemetry.cameraFocusMode === 1 ? 'EASY (1X)' :
+               uiTelemetry.cameraFocusMode === 2 ? 'MEDIUM (2X)' : 'HARD (4X)'} [0-3]
+            </span>
           </div>
         </div>
 

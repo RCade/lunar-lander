@@ -155,6 +155,7 @@ export function Lander({ gameState, setGameState, inputRef, telemetryRef, camera
         rightVector: localRight.clone(),
         sasActive: input.sasActive,
         cameraMode: input.cameraMode,
+        cameraFocusMode: input.cameraFocusMode || 0,
       };
       return;
     }
@@ -377,6 +378,7 @@ export function Lander({ gameState, setGameState, inputRef, telemetryRef, camera
       rightVector: localRight.clone(),
       sasActive: input.sasActive,
       cameraMode: input.cameraMode,
+      cameraFocusMode: input.cameraFocusMode || 0,
     };
   });
 
