@@ -199,11 +199,31 @@ export function Lander({ gameState, setGameState, inputRef, telemetryRef, camera
     // 3. RCS Translation Force (Grip Squeezed Mode)
     const F_rcs = new THREE.Vector3(0, 0, 0);
     if (hasFuel) {
+      let translateRightVec = localRight;
+      let translateForwardVec = localForward;
+
+      if (state.camera) {
+        // Compute camera direction vectors
+        const camRight = new THREE.Vector3(1, 0, 0).applyQuaternion(state.camera.quaternion);
+        const camForward = new THREE.Vector3(0, 0, -1).applyQuaternion(state.camera.quaternion);
+
+        // Project onto horizontal XZ plane to keep translation horizontal relative to camera direction
+        camRight.y = 0;
+        camForward.y = 0;
+
+        if (camRight.lengthSq() > 0.01) {
+          translateRightVec = camRight.normalize();
+        }
+        if (camForward.lengthSq() > 0.01) {
+          translateForwardVec = camForward.normalize();
+        }
+      }
+
       if (input.translateX !== 0) {
-        F_rcs.add(localRight.clone().multiplyScalar(input.translateX * RCS_FORCE));
+        F_rcs.add(translateRightVec.clone().multiplyScalar(input.translateX * RCS_FORCE));
       }
       if (input.translateZ !== 0) {
-        F_rcs.add(localForward.clone().multiplyScalar(input.translateZ * RCS_FORCE));
+        F_rcs.add(translateForwardVec.clone().multiplyScalar(input.translateZ * RCS_FORCE));
       }
     }
 
