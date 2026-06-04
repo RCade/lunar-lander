@@ -238,10 +238,28 @@ export function Lander({ gameState, setGameState, inputRef, telemetryRef, camera
     // --- ROTATIONAL PHYSICS ---
     const torques = new THREE.Vector3(0, 0, 0);
     if (hasFuel) {
+      // Compute camera-relative control sign to prevent inverted roll/yaw when camera orbits in front
+      let controlSign = 1;
+      if (state.camera) {
+        const camForward = new THREE.Vector3(0, 0, -1).applyQuaternion(state.camera.quaternion);
+        const landerForward = new THREE.Vector3(0, 0, -1).applyQuaternion(pState.quaternion);
+        
+        // Project onto XZ plane
+        camForward.y = 0;
+        landerForward.y = 0;
+        
+        if (camForward.lengthSq() > 0.01 && landerForward.lengthSq() > 0.01) {
+          camForward.normalize();
+          landerForward.normalize();
+          const dot = camForward.dot(landerForward);
+          controlSign = dot >= 0 ? 1 : -1;
+        }
+      }
+
       // Manual control torques (pitch -> X, yaw -> Y, roll -> Z)
       torques.x += input.pitch * RCS_TORQUE;
-      torques.y += input.yaw * RCS_TORQUE;
-      torques.z += input.roll * RCS_TORQUE;
+      torques.y += input.yaw * RCS_TORQUE * controlSign;
+      torques.z += input.roll * RCS_TORQUE * controlSign;
     }
 
     // SAS Dampening (fired if manual controls are zero)
