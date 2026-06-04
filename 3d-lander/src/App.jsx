@@ -60,20 +60,23 @@ function CameraController({ telemetryRef }) {
 
     if (cameraMode === 3) {
       // --- 3rd-Person Chase Camera Spring-Damper ---
-      // Position target is behind and above the lander, dynamically adjusted if focus lock is active
+      // Position target is behind and above the lander, dynamically rotated to align the pad in the background if focus lock is active
       let idealCameraPos;
       if (cameraFocusMode >= 1 && cameraFocusMode <= 3) {
         const pad = LANDING_PADS[cameraFocusMode - 1];
         const padPos = new THREE.Vector3(pad.x, pad.y, pad.z);
         const distance = landerPos.distanceTo(padPos);
 
-        // Dynamically zoom out and tilt up based on distance to the pad
-        const zoomDistance = 16.0 + distance * 0.55;
-        const heightOffset = 7.5 + distance * 0.15;
-
-        idealCameraPos = landerPos.clone()
-          .addScaledVector(up, heightOffset)
-          .addScaledVector(localForward, -zoomDistance);
+        if (distance > 0.1) {
+          const dirToPadNormalized = new THREE.Vector3().subVectors(padPos, landerPos).normalize();
+          idealCameraPos = landerPos.clone()
+            .addScaledVector(dirToPadNormalized, -16.0)
+            .addScaledVector(up, 7.5);
+        } else {
+          idealCameraPos = landerPos.clone()
+            .addScaledVector(up, 7.5)
+            .addScaledVector(localForward, -16.0);
+        }
       } else {
         idealCameraPos = landerPos.clone()
           .addScaledVector(up, 7.5)                // 7.5 units above
@@ -98,12 +101,10 @@ function CameraController({ telemetryRef }) {
       velCamera.current.addScaledVector(force, dt);
       camera.position.addScaledVector(velCamera.current, dt);
 
-      // Target lookat is slightly in front of the lander to anticipate movement, or midpoint to pad
+      // Target lookat is slightly in front of the lander to anticipate movement, or directly at the lander when pad lock is active
       let lookAtTarget;
       if (cameraFocusMode >= 1 && cameraFocusMode <= 3) {
-        const pad = LANDING_PADS[cameraFocusMode - 1];
-        const padPos = new THREE.Vector3(pad.x, pad.y, pad.z);
-        lookAtTarget = new THREE.Vector3().addVectors(landerPos, padPos).multiplyScalar(0.5);
+        lookAtTarget = landerPos.clone();
       } else {
         lookAtTarget = landerPos.clone().addScaledVector(localForward, 3.0);
       }
