@@ -60,10 +60,25 @@ function CameraController({ telemetryRef }) {
 
     if (cameraMode === 3) {
       // --- 3rd-Person Chase Camera Spring-Damper ---
-      // Position target is behind and above the lander
-      const idealCameraPos = landerPos.clone()
-        .addScaledVector(up, 7.5)                // 7.5 units above
-        .addScaledVector(localForward, -16.0);    // 16 units behind
+      // Position target is behind and above the lander, dynamically adjusted if focus lock is active
+      let idealCameraPos;
+      if (cameraFocusMode >= 1 && cameraFocusMode <= 3) {
+        const pad = LANDING_PADS[cameraFocusMode - 1];
+        const padPos = new THREE.Vector3(pad.x, pad.y, pad.z);
+        const distance = landerPos.distanceTo(padPos);
+
+        // Dynamically zoom out and tilt up based on distance to the pad
+        const zoomDistance = 16.0 + distance * 0.55;
+        const heightOffset = 7.5 + distance * 0.15;
+
+        idealCameraPos = landerPos.clone()
+          .addScaledVector(up, heightOffset)
+          .addScaledVector(localForward, -zoomDistance);
+      } else {
+        idealCameraPos = landerPos.clone()
+          .addScaledVector(up, 7.5)                // 7.5 units above
+          .addScaledVector(localForward, -16.0);    // 16 units behind
+      }
 
       if (isFirstFrame.current) {
         camera.position.copy(idealCameraPos);
